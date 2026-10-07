@@ -13,7 +13,7 @@ export function Navbar() {
       <Container className="flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-8">
           <Logo compact />
-          <nav aria-label="Main" className="hidden md:block">
+          <nav aria-label="Main" className="hidden lg:block">
             <ul className="flex items-center gap-1">
               {marketingNav.map((item) => (
                 <li key={item.href}>

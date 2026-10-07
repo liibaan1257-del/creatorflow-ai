@@ -5,7 +5,10 @@ import type { NavItem } from "@/types";
 /** Public site navigation (Navbar). */
 export const marketingNav: readonly NavItem[] = [
   { label: "Features", href: "/#features" },
-  { label: "Who it's for", href: "/#audience" },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "Use cases", href: "/#use-cases" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 export type AppNavItem = NavItem & { icon: ComponentType<IconProps> };

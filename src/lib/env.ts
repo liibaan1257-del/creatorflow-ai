@@ -22,11 +22,15 @@ function normalizeUrl(value: string | undefined, fallback: string): string {
 }
 
 export const publicEnv = {
+  // Canonical site URL (metadata, Open Graph, sitemap). Falls back to
+  // Vercel's system variables: production domain first, then this deployment.
   appUrl: normalizeUrl(
-    process.env.NEXT_PUBLIC_APP_URL ??
-      (process.env.NEXT_PUBLIC_VERCEL_URL
-        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-        : undefined),
+    clean(process.env.NEXT_PUBLIC_APP_URL) ||
+      (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
+        : process.env.NEXT_PUBLIC_VERCEL_URL
+          ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+          : undefined),
     "http://localhost:3000",
   ),
   supabaseUrl: clean(process.env.NEXT_PUBLIC_SUPABASE_URL).replace(/\/+$/, ""),

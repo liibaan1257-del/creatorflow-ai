@@ -19,7 +19,7 @@ export function MobileNav({ items }: { items: readonly NavItem[] }) {
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden"
+        className="lg:hidden"
         aria-label="Open menu"
         aria-expanded={open}
         onClick={() => setOpen(true)}

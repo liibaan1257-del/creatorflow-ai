@@ -18,15 +18,23 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.appUrl),
   title: {
-    default: siteConfig.name,
+    default: `${siteConfig.name} — ${siteConfig.tagline}`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
+  keywords: [...siteConfig.keywords],
   openGraph: {
     type: "website",
     siteName: siteConfig.name,
-    title: siteConfig.name,
+    locale: "en_US",
+    url: "/",
+    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    description: siteConfig.description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
   },
 };

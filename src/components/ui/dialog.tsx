@@ -67,42 +67,46 @@ export function Dialog({
           : "m-0 h-dvh max-h-none w-72 max-w-[85vw]",
       )}
     >
-      <div
-        className={cn(
-          "flex max-h-[inherit] flex-col bg-card shadow-overlay",
-          placement === "center"
-            ? "animate-dialog-in rounded-xl border border-border"
-            : "h-full border-r border-border",
-          className,
-        )}
-      >
-        <div className="flex items-start justify-between gap-4 p-5 pb-0 sm:p-6 sm:pb-0">
-          <div className={cn("space-y-1", hideTitle && "sr-only")}>
-            <h2 id={titleId} className="text-lg font-semibold tracking-tight">
-              {title}
-            </h2>
-            {description ? (
-              <p id={descriptionId} className="text-sm text-muted-foreground">
-                {description}
-              </p>
-            ) : null}
+      {/* Content mounts only while open: keeps closed dialogs (e.g. the mobile
+          menu) out of the server HTML and its heading outline. */}
+      {open ? (
+        <div
+          className={cn(
+            "flex max-h-[inherit] flex-col bg-card shadow-overlay",
+            placement === "center"
+              ? "animate-dialog-in rounded-xl border border-border"
+              : "h-full border-r border-border",
+            className,
+          )}
+        >
+          <div className="flex items-start justify-between gap-4 p-5 pb-0 sm:p-6 sm:pb-0">
+            <div className={cn("space-y-1", hideTitle && "sr-only")}>
+              <h2 id={titleId} className="text-lg font-semibold tracking-tight">
+                {title}
+              </h2>
+              {description ? (
+                <p id={descriptionId} className="text-sm text-muted-foreground">
+                  {description}
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="-mt-1 -mr-1 ml-auto grid size-8 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="-mt-1 -mr-1 ml-auto grid size-8 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </button>
+          {children ? <div className="flex-1 overflow-y-auto p-5 sm:p-6">{children}</div> : null}
+          {footer ? (
+            <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+              {footer}
+            </div>
+          ) : null}
         </div>
-        {children ? <div className="flex-1 overflow-y-auto p-5 sm:p-6">{children}</div> : null}
-        {footer ? (
-          <div className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-            {footer}
-          </div>
-        ) : null}
-      </div>
+      ) : null}
     </dialog>
   );
 }
