@@ -7,7 +7,7 @@ creators, freelancers, and small businesses.
 
 ## Getting started
 
-Requires Node.js 20.9+.
+Requires Node.js 22 (pinned in `package.json` `engines` so Vercel builds on the same major).
 
 ```bash
 npm install
