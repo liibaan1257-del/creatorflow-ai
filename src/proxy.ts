@@ -14,11 +14,19 @@ import {
  * Data Access Layer (`src/lib/auth/dal.ts`).
  */
 export async function proxy(request: NextRequest) {
-  // Without Supabase credentials, public pages still work; protected pages
-  // fail loudly in the Data Access Layer.
+  // Without valid Supabase credentials, public pages still work; protected
+  // pages fail loudly in the Data Access Layer.
   if (!isSupabaseConfigured()) return NextResponse.next();
 
-  const { response, isAuthenticated } = await updateSession(request);
+  let session: Awaited<ReturnType<typeof updateSession>>;
+  try {
+    session = await updateSession(request);
+  } catch (error) {
+    // Never take the whole site down because the auth backend misbehaves.
+    console.error("[proxy] Failed to refresh Supabase session:", error);
+    return NextResponse.next();
+  }
+  const { response, isAuthenticated } = session;
   const { pathname, search } = request.nextUrl;
 
   if (!isAuthenticated && matchesPrefix(pathname, PROTECTED_PREFIXES)) {

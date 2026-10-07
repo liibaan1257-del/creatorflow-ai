@@ -11,6 +11,11 @@
  * Next.js can inline it; dynamic lookups are not replaced at build time.
  */
 
+/** Trims whitespace and stray wrapping quotes pasted into dashboards. */
+function clean(value: string | undefined): string {
+  return (value ?? "").trim().replace(/^(["'])(.*)\1$/, "$2").trim();
+}
+
 function normalizeUrl(value: string | undefined, fallback: string): string {
   const url = value?.trim() || fallback;
   return url.replace(/\/+$/, "");
@@ -24,21 +29,37 @@ export const publicEnv = {
         : undefined),
     "http://localhost:3000",
   ),
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "",
+  supabaseUrl: clean(process.env.NEXT_PUBLIC_SUPABASE_URL).replace(/\/+$/, ""),
   // Publishable (sb_publishable_...) or legacy anon key. Safe in the browser:
   // data access is enforced by Row Level Security.
-  supabasePublishableKey:
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ?? "",
+  supabasePublishableKey: clean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
 } as const;
 
+export type SupabaseConfigStatus = "ok" | "missing" | "invalid_url";
+
+/** Non-secret summary of the Supabase configuration (safe to expose). */
+export function getSupabaseConfigStatus(): SupabaseConfigStatus {
+  const { supabaseUrl, supabasePublishableKey } = publicEnv;
+  if (!supabaseUrl || !supabasePublishableKey) return "missing";
+  try {
+    const { protocol } = new URL(supabaseUrl);
+    return protocol === "https:" || protocol === "http:" ? "ok" : "invalid_url";
+  } catch {
+    return "invalid_url";
+  }
+}
+
 export function isSupabaseConfigured(): boolean {
-  return Boolean(publicEnv.supabaseUrl && publicEnv.supabasePublishableKey);
+  return getSupabaseConfigStatus() === "ok";
 }
 
 export function getSupabaseEnv(): { url: string; publishableKey: string } {
-  if (!isSupabaseConfigured()) {
+  const status = getSupabaseConfigStatus();
+  if (status !== "ok") {
     throw new Error(
-      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (see .env.example).",
+      status === "missing"
+        ? "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (see .env.example)."
+        : "NEXT_PUBLIC_SUPABASE_URL is not a valid URL. Expected e.g. https://<project-ref>.supabase.co",
     );
   }
   return {
