@@ -70,7 +70,23 @@ export async function login(
     return { error: "Could not sign you in. Please try again.", values };
   }
 
-  redirect(safeRedirectPath(formData.get("next")));
+  redirect(safeRedirectPath(formData.get("next") ?? (await nextFromReferer())));
+}
+
+/**
+ * The login form's hidden `next` field streams in after the first paint, so a
+ * very fast (or pre-hydration) submit can miss it. The page URL still carries
+ * `?next=`; read it from the Referer as a fallback. safeRedirectPath() keeps
+ * the result a same-origin relative path.
+ */
+async function nextFromReferer(): Promise<string | null> {
+  const referer = (await headers()).get("referer");
+  if (!referer) return null;
+  try {
+    return new URL(referer).searchParams.get("next");
+  } catch {
+    return null;
+  }
 }
 
 export async function signup(

@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AUTH_ROUTES } from "@/lib/auth/redirect";
-import type { Profile } from "@/types/database";
+import type { Credits, Profile, Subscription } from "@/types/database";
 
 /**
  * Data Access Layer: the single place that resolves the current user.
@@ -46,5 +46,33 @@ export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
     .maybeSingle();
 
   if (error) throw new Error(`Failed to load profile: ${error.message}`);
+  return data;
+});
+
+/** The signed-in user's credit balance (null if the row is missing). */
+export const getCurrentCredits = cache(async (): Promise<Credits | null> => {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("credits")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to load credits: ${error.message}`);
+  return data;
+});
+
+/** The signed-in user's current plan (null if the row is missing). */
+export const getCurrentSubscription = cache(async (): Promise<Subscription | null> => {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to load subscription: ${error.message}`);
   return data;
 });

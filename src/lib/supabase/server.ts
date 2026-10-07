@@ -1,6 +1,7 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { getSupabaseEnv } from "@/lib/env";
 import type { Database } from "@/types/database";
 
@@ -9,8 +10,10 @@ import type { Database } from "@/types/database";
  * Create a new client per request; never share one between requests.
  */
 export async function createClient() {
-  // Read cookies first: it marks the caller as request-time (dynamic) before
-  // anything else runs, so prerendering never evaluates the env check.
+  // Supabase auth checks token expiry against the clock and every query is
+  // per-user, so this client is always request-time: connection() keeps it out
+  // of prerendering (including runtime prefetch prerenders).
+  await connection();
   const cookieStore = await cookies();
   const { url, publishableKey } = getSupabaseEnv();
 
