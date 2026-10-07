@@ -104,7 +104,15 @@ function toAIError(error: unknown): AIError {
     );
   }
   if (error instanceof OpenAI.RateLimitError) {
-    return new AIError("rate_limited", "The image service is busy or out of quota. Please try again later.", { cause: error });
+    // 429 covers both throttling and an OpenAI account without credit.
+    if (error.code === "insufficient_quota") {
+      return new AIError(
+        "not_configured",
+        "Image generation is unavailable: the image provider account has no remaining credit.",
+        { cause: error },
+      );
+    }
+    return new AIError("rate_limited", "The image service is busy right now. Please try again in a minute.", { cause: error });
   }
   if (error instanceof OpenAI.APIUserAbortError) {
     return new AIError("unavailable", "The request was cancelled.", { cause: error });
