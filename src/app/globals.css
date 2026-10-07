@@ -1,47 +1,144 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Components use semantic utilities (bg-background,
- * text-muted-foreground, bg-primary, ...) so the palette can change in one place.
+ * CreatorFlow AI design tokens.
+ *
+ * Components only use semantic utilities (bg-background, text-muted-foreground,
+ * bg-primary, border-border, ...), so the whole palette, including dark mode,
+ * is controlled from this file.
  */
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --primary: #4f46e5;
-  --primary-foreground: #ffffff;
+  --foreground: #0b1220;
+  --surface: #f7f8fb; /* page background behind cards */
   --card: #ffffff;
+  --muted: #f1f3f8;
+  --muted-foreground: #5b6477;
+  --border: #e3e7ef;
+  --input: #d5dbe6;
+
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-foreground: #ffffff;
+  --primary-soft: #eef0ff; /* tinted backgrounds, active nav items */
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --destructive-soft: #fef2f2;
+  --success: #059669;
+  --success-soft: #ecfdf5;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+
+  --ring: #6366f1;
+  --overlay: rgb(11 18 32 / 0.5);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b0f1a;
-    --foreground: #e2e8f0;
-    --muted: #151b2b;
-    --muted-foreground: #94a3b8;
-    --border: #1e293b;
+    --background: #0a0d14;
+    --foreground: #e6e9f0;
+    --surface: #0a0d14;
+    --card: #111521;
+    --muted: #171c2a;
+    --muted-foreground: #949db0;
+    --border: #232a3b;
+    --input: #2e364a;
+
     --primary: #818cf8;
-    --primary-foreground: #0b0f1a;
-    --card: #111827;
+    --primary-hover: #a5b4fc;
+    --primary-foreground: #0a0d14;
+    --primary-soft: #1c1f3d;
+
+    --destructive: #f87171;
+    --destructive-foreground: #0a0d14;
+    --destructive-soft: #2a1215;
+    --success: #34d399;
+    --success-soft: #0d2420;
+    --warning: #fbbf24;
+    --warning-soft: #2a2010;
+
+    --ring: #818cf8;
+    --overlay: rgb(0 0 0 / 0.65);
   }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
-  --color-card: var(--card);
+  --color-primary-soft: var(--primary-soft);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --shadow-overlay: 0 12px 32px -8px rgb(16 24 40 / 0.25), 0 4px 8px -4px rgb(16 24 40 / 0.1);
+
+  --animate-toast-in: toast-in 180ms ease-out;
+  --animate-dialog-in: dialog-in 160ms ease-out;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* One consistent, visible keyboard focus style everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--primary-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Prevent the page behind an open modal from scrolling. */
+html:has(dialog[open]) {
+  overflow: hidden;
 }

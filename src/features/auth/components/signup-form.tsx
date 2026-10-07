@@ -48,7 +48,7 @@ export function SignupForm() {
         error={state.fieldErrors?.password}
       />
       <FormStatus state={state} />
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" className="w-full" loading={pending}>
         {pending ? "Creating account…" : "Create account"}
       </Button>
     </form>

@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/layout/app-shell";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/state-message";
+import { SparklesIcon } from "@/components/ui/icons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentProfile, requireUser } from "@/lib/auth/dal";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
 export default function DashboardPage() {
   return (
-    <Container className="space-y-6">
-      <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardContent />
-      </Suspense>
-    </Container>
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
 
@@ -19,44 +21,58 @@ async function DashboardContent() {
   const [user, profile] = await Promise.all([requireUser(), getCurrentProfile()]);
   const name = profile?.full_name?.trim();
   const memberSince = profile
-    ? new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(
-        new Date(profile.created_at),
-      )
+    ? new Intl.DateTimeFormat("en", { dateStyle: "long" }).format(new Date(profile.created_at))
     : null;
 
   return (
     <>
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {name ? `Welcome, ${name}` : "Welcome"}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Your content workspace is ready. AI tools are coming next.
-        </p>
-      </div>
+      <PageHeader
+        title={name ? `Welcome, ${name}` : "Welcome"}
+        description="Your content workspace is ready."
+      />
 
-      <section className="rounded-xl border border-border bg-card p-6">
-        <h2 className="font-semibold">Account</h2>
-        <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-muted-foreground">Email</dt>
-            <dd className="mt-1 font-medium break-all">{user.email ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Member since</dt>
-            <dd className="mt-1 font-medium">{memberSince ?? "—"}</dd>
-          </div>
-        </dl>
-      </section>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <EmptyState
+          className="lg:col-span-2"
+          icon={<SparklesIcon />}
+          title="No content yet"
+          description="AI writing tools for blog posts, video scripts and social captions are coming next. Everything you create will appear here."
+        />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Account</CardTitle>
+            <CardDescription>Your sign-in details.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-4 text-sm">
+              <div>
+                <dt className="text-muted-foreground">Email</dt>
+                <dd className="mt-1 font-medium break-all">{user.email ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Member since</dt>
+                <dd className="mt-1 font-medium">{memberSince ?? "—"}</dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading dashboard" className="animate-pulse space-y-6">
-      <div className="h-8 w-64 rounded bg-border" />
-      <div className="h-32 rounded-xl bg-border" />
+    <div aria-busy="true" aria-label="Loading dashboard">
+      <div className="mb-8 space-y-2">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-5 w-48" />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Skeleton className="h-64 rounded-xl lg:col-span-2" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
     </div>
   );
 }

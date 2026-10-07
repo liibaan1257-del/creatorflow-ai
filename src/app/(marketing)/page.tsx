@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { siteConfig } from "@/config/site";
 import { AUTH_ROUTES } from "@/lib/auth/redirect";
@@ -40,9 +42,7 @@ export default function HomePage() {
     <>
       <section className="py-20 sm:py-28">
         <Container className="text-center">
-          <p className="mx-auto w-fit rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">
-            Early access — in active development
-          </p>
+          <Badge variant="primary">Early access — in active development</Badge>
           <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
             Create better content, faster, with{" "}
             <span className="text-primary">{siteConfig.name}</span>
@@ -71,21 +71,20 @@ export default function HomePage() {
         </Container>
       </section>
 
-      <section id="features" className="scroll-mt-16 border-t border-border bg-muted py-20">
+      <section id="features" className="scroll-mt-16 border-t border-border bg-surface py-20">
         <Container>
           <h2 className="text-center text-3xl font-bold tracking-tight">
             Everything you need to create
           </h2>
           <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((feature) => (
-              <li
-                key={feature.title}
-                className="rounded-xl border border-border bg-card p-6"
-              >
-                <h3 className="font-semibold">{feature.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {feature.description}
-                </p>
+              <li key={feature.title}>
+                <Card className="h-full">
+                  <CardHeader>
+                    <CardTitle>{feature.title}</CardTitle>
+                    <CardDescription>{feature.description}</CardDescription>
+                  </CardHeader>
+                </Card>
               </li>
             ))}
           </ul>
@@ -101,7 +100,7 @@ export default function HomePage() {
             {audiences.map((audience) => (
               <li
                 key={audience}
-                className="rounded-full border border-border px-4 py-2 text-sm"
+                className="rounded-full border border-border bg-card px-4 py-2 text-sm shadow-card"
               >
                 {audience}
               </li>

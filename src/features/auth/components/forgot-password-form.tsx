@@ -27,7 +27,7 @@ export function ForgotPasswordForm() {
         error={state.fieldErrors?.email}
       />
       <FormStatus state={state} />
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" className="w-full" loading={pending}>
         {pending ? "Sending…" : "Send reset link"}
       </Button>
     </form>

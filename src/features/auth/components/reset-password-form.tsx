@@ -38,7 +38,7 @@ export function ResetPasswordForm() {
         error={state.fieldErrors?.confirmPassword}
       />
       <FormStatus state={state} />
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" className="w-full" loading={pending}>
         {pending ? "Saving…" : "Update password"}
       </Button>
     </form>

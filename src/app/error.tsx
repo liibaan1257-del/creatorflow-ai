@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { RefreshIcon } from "@/components/ui/icons";
+import { ErrorState } from "@/components/ui/state-message";
 
 export default function Error({
   error,
@@ -17,17 +19,17 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex flex-1 items-center py-24">
-      <Container className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Something went wrong
-        </h1>
-        <p className="mt-4 text-muted-foreground">
-          An unexpected error occurred. Please try again.
-        </p>
-        <Button onClick={reset} className="mt-8">
-          Try again
-        </Button>
+    <main className="flex flex-1 items-center py-16">
+      <Container className="max-w-xl">
+        <ErrorState
+          description="An unexpected error occurred. Please try again."
+          action={
+            <Button onClick={reset}>
+              <RefreshIcon />
+              Try again
+            </Button>
+          }
+        />
       </Container>
     </main>
   );
