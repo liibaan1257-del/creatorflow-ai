@@ -32,7 +32,7 @@ export type AppNavItem = NavItem & {
 export const appNav: readonly AppNavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
   { label: "AI Writer", href: "/writer", icon: PenIcon },
-  { label: "AI Images", href: "/images", icon: ImageIcon, comingSoon: true },
+  { label: "AI Images", href: "/images", icon: ImageIcon },
   { label: "My Projects", href: "/projects", icon: FolderIcon },
   { label: "Templates", href: "/templates", icon: TemplateIcon, comingSoon: true },
   { label: "Settings", href: "/settings", icon: SettingsIcon },

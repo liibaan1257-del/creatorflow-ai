@@ -76,6 +76,19 @@ profile, credits and a free subscription automatically (signup trigger).
   generations are not charged. Users cannot write credits or generations
   directly.
 
+## AI Images
+
+- UI: `/images` (`src/features/images`). Endpoint: `POST /api/ai/images`.
+- Provider: OpenAI GPT Image via the official SDK (`OPENAI_API_KEY`,
+  optional `IMAGE_MODEL`, default `gpt-image-1`), behind the `ImageProvider`
+  interface in `src/lib/ai/`. Wide/tall images from fixed-size models are
+  centre-cropped to exact 16:9 / 9:16 with `sharp`.
+- Flow: verify session → validate → check credits (4 per image) → generate →
+  store in the private `user-uploads` bucket (`<user id>/images/…`) →
+  `public.record_image_generation()` charges credits and records the
+  generation and image atomically (file removed and nothing charged on
+  failure). The browser only receives short-lived signed URLs.
+
 ## Authentication
 
 - Email + password via Supabase Auth, with email confirmation and password reset.

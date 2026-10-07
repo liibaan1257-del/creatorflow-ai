@@ -20,6 +20,18 @@ export const serverEnv = {
   get aiModel(): string | undefined {
     return read("AI_MODEL");
   },
+  /** Which image provider implementation to use (see src/lib/ai). */
+  get imageProvider(): string {
+    return read("IMAGE_PROVIDER") ?? "openai";
+  },
+  /** Image model id for the selected image provider. */
+  get imageModel(): string | undefined {
+    return read("IMAGE_MODEL");
+  },
+  /** OpenAI API key (platform.openai.com → API keys). */
+  get openaiApiKey(): string | undefined {
+    return read("OPENAI_API_KEY");
+  },
   /** Anthropic API key (console.anthropic.com → API Keys). */
   get anthropicApiKey(): string | undefined {
     return read("ANTHROPIC_API_KEY");

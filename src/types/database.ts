@@ -24,7 +24,7 @@ export type ContentType =
   | "meta_description";
 export type ProjectType = ContentType | "video_script" | "social_caption" | "image" | "other";
 export type ProjectStatus = "draft" | "in_progress" | "completed" | "archived";
-export type GenerationType = ContentType | "video_script" | "social_caption" | "other";
+export type GenerationType = ContentType | "image" | "video_script" | "social_caption" | "other";
 export type SubscriptionPlan = "free" | "pro" | "business";
 export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled" | "expired";
 
@@ -132,6 +132,12 @@ export type Database = {
           prompt: string;
           image_url: string;
           created_at: string;
+          generation_id: string | null;
+          style: string | null;
+          aspect_ratio: string | null;
+          width: number | null;
+          height: number | null;
+          model: string | null;
         };
         Insert: {
           id?: string;
@@ -140,6 +146,12 @@ export type Database = {
           prompt: string;
           image_url: string;
           created_at?: string;
+          generation_id?: string | null;
+          style?: string | null;
+          aspect_ratio?: string | null;
+          width?: number | null;
+          height?: number | null;
+          model?: string | null;
         };
         Update: {
           id?: string;
@@ -148,6 +160,12 @@ export type Database = {
           prompt?: string;
           image_url?: string;
           created_at?: string;
+          generation_id?: string | null;
+          style?: string | null;
+          aspect_ratio?: string | null;
+          width?: number | null;
+          height?: number | null;
+          model?: string | null;
         };
         Relationships: [];
       };
@@ -214,6 +232,18 @@ export type Database = {
       generation_cost: {
         Args: { p_type: string };
         Returns: number | null;
+      };
+      record_image_generation: {
+        Args: {
+          p_prompt: string;
+          p_image_path: string;
+          p_style: string;
+          p_aspect_ratio: string;
+          p_width: number;
+          p_height: number;
+          p_model: string;
+        };
+        Returns: { image_id: string; generation_id: string; credits_used: number; balance: number }[];
       };
       record_generation: {
         Args: { p_type: string; p_prompt: string; p_output: string; p_project_id?: string };

@@ -45,3 +45,30 @@ export class AIError extends Error {
     this.name = "AIError";
   }
 }
+
+// ---------------------------------------------------------------------------
+// Images
+// ---------------------------------------------------------------------------
+
+export type AspectRatio = "1:1" | "16:9" | "9:16";
+
+export type ImageGenerationRequest = {
+  prompt: string;
+  aspectRatio: AspectRatio;
+  /** Stable, non-identifying end-user id for the provider's abuse monitoring. */
+  endUserId?: string;
+  signal?: AbortSignal;
+};
+
+export type ImageGenerationResult = {
+  data: Buffer;
+  mimeType: "image/png" | "image/jpeg" | "image/webp";
+  width: number;
+  height: number;
+  model: string;
+};
+
+export interface ImageProvider {
+  readonly name: string;
+  generateImage(request: ImageGenerationRequest): Promise<ImageGenerationResult>;
+}
