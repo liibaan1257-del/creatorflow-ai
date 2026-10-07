@@ -1,0 +1,87 @@
+import "server-only";
+import { requireUser } from "@/lib/auth/dal";
+import { createClient } from "@/lib/supabase/server";
+import {
+  SIGNED_URL_TTL_SECONDS,
+  STORAGE_BUCKETS,
+  UPLOAD_LIMITS,
+} from "@/lib/storage/config";
+
+/**
+ * Server-side storage helpers for the signed-in user's private files.
+ *
+ * They use the user's own Supabase session, so storage RLS policies apply in
+ * addition to the checks here: a user can only touch objects under
+ * `<their user id>/...` in the `user-uploads` bucket.
+ */
+
+const bucket = STORAGE_BUCKETS.userUploads;
+
+export type UploadResult =
+  | { ok: true; path: string }
+  | { ok: false; error: string };
+
+/** Keeps a readable, URL-safe file name. */
+function sanitizeFileName(name: string): string {
+  const cleaned = name
+    .normalize("NFKD")
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "")
+    .slice(-100);
+  return cleaned || "file";
+}
+
+function isOwnPath(userId: string, path: string): boolean {
+  return path.startsWith(`${userId}/`) && !path.includes("..");
+}
+
+export function validateUpload(file: File): string | null {
+  if (file.size === 0) return "The file is empty.";
+  if (file.size > UPLOAD_LIMITS.maxFileSizeBytes) {
+    return `Files must be ${UPLOAD_LIMITS.maxFileSizeBytes / 1024 / 1024} MB or smaller.`;
+  }
+  if (!(UPLOAD_LIMITS.allowedMimeTypes as readonly string[]).includes(file.type)) {
+    return "Only PNG, JPEG, WebP and GIF images are supported.";
+  }
+  return null;
+}
+
+/** Uploads a file to `<userId>/<uuid>-<name>` and returns its storage path. */
+export async function uploadUserFile(file: File): Promise<UploadResult> {
+  const user = await requireUser();
+  const invalid = validateUpload(file);
+  if (invalid) return { ok: false, error: invalid };
+
+  const path = `${user.id}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+  const supabase = await createClient();
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+
+  if (error) return { ok: false, error: "Upload failed. Please try again." };
+  return { ok: true, path };
+}
+
+/** Short-lived URL for displaying a private file. Returns null if not allowed. */
+export async function getUserFileUrl(
+  path: string,
+  expiresIn: number = SIGNED_URL_TTL_SECONDS,
+): Promise<string | null> {
+  const user = await requireUser();
+  if (!isOwnPath(user.id, path)) return null;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn);
+  return error ? null : data.signedUrl;
+}
+
+export async function deleteUserFile(path: string): Promise<boolean> {
+  const user = await requireUser();
+  if (!isOwnPath(user.id, path)) return false;
+
+  const supabase = await createClient();
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+  return !error;
+}

@@ -19,15 +19,31 @@ Open http://localhost:3000.
 
 ## Supabase setup
 
-1. **Keys:** Supabase → Project Settings → API Keys. Put the project URL and
-   the publishable (or legacy anon) key in `.env.local`, and in Vercel →
-   Settings → Environment Variables. `NEXT_PUBLIC_*` values are baked in at
-   build time, so redeploy after changing them.
-2. **Database:** run the files in `supabase/migrations/` in order (Supabase →
-   SQL Editor, or `npx supabase db push` with the CLI).
+1. **Keys:** Supabase → Project Settings → API. Set `NEXT_PUBLIC_SUPABASE_URL`
+   and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
+   in `.env.local` and in Vercel → Settings → Environment Variables.
+   `NEXT_PUBLIC_*` values are baked in at build time, so redeploy after changes.
+   `SUPABASE_SERVICE_ROLE_KEY` is server-only and optional for now.
+2. **Database & storage:** run the files in `supabase/migrations/` in order
+   (Supabase → SQL Editor, or `npx supabase db push` with the CLI).
 3. **Auth URLs:** Supabase → Authentication → URL Configuration:
    - Site URL: your production URL
    - Redirect URLs: `http://localhost:3000/**` and `https://<your-domain>/**`
+
+### Client architecture
+
+| File | Runs in | Key | Use for |
+| --- | --- | --- | --- |
+| `src/lib/supabase/client.ts` | Browser (Client Components) | anon/publishable | Realtime, client-side reads (RLS applies) |
+| `src/lib/supabase/server.ts` | Server Components, Server Actions, Route Handlers | anon/publishable + user cookies | Everything done on behalf of the signed-in user (RLS applies) |
+| `src/lib/supabase/proxy.ts` | `src/proxy.ts` | anon/publishable | Refreshing the session cookie on each request |
+| `src/lib/supabase/admin.ts` | Server only (`server-only`) | service role | Trusted jobs only (webhooks, admin). **Bypasses RLS** |
+
+- `src/lib/auth/dal.ts`: Data Access Layer (`getCurrentUser`, `requireUser`, profile queries).
+- `src/lib/storage/`: bucket config and server helpers for the private
+  `user-uploads` bucket (`<user id>/<file>` paths, owner-only RLS policies).
+- `src/lib/env.ts` (public values) and `src/lib/server-env.ts` (secrets,
+  `server-only`) are the only places that read environment variables.
 
 ## Authentication
 

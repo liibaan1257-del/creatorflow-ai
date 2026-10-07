@@ -3,9 +3,9 @@
  *
  * - `publicEnv` only contains `NEXT_PUBLIC_*` values. These are inlined into
  *   the client bundle at build time, so never put secrets here.
- * - Server-only secrets (Supabase secret key, AI provider keys, payment keys)
- *   will live in a module guarded by `import "server-only"`, so they can never
- *   be bundled into client code.
+ * - Server-only secrets (Supabase service role key, AI provider keys, payment
+ *   keys) live in `src/lib/server-env.ts`, guarded by `import "server-only"`,
+ *   so they can never be bundled into client code.
  *
  * Each variable must be referenced literally (`process.env.NEXT_PUBLIC_X`) so
  * Next.js can inline it; dynamic lookups are not replaced at build time.
@@ -34,9 +34,12 @@ export const publicEnv = {
     "http://localhost:3000",
   ),
   supabaseUrl: clean(process.env.NEXT_PUBLIC_SUPABASE_URL).replace(/\/+$/, ""),
-  // Publishable (sb_publishable_...) or legacy anon key. Safe in the browser:
-  // data access is enforced by Row Level Security.
-  supabasePublishableKey: clean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
+  // Public client key: the anon key or the newer publishable key
+  // (sb_publishable_...). Safe in the browser: Row Level Security enforces
+  // data access. Either variable name is accepted.
+  supabasePublishableKey:
+    clean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
+    clean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
 } as const;
 
 export type SupabaseConfigStatus = "ok" | "missing" | "invalid_url";
@@ -62,7 +65,7 @@ export function getSupabaseEnv(): { url: string; publishableKey: string } {
   if (status !== "ok") {
     throw new Error(
       status === "missing"
-        ? "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (see .env.example)."
+        ? "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (see .env.example)."
         : "NEXT_PUBLIC_SUPABASE_URL is not a valid URL. Expected e.g. https://<project-ref>.supabase.co",
     );
   }
