@@ -25,7 +25,9 @@ Open http://localhost:3000.
    `NEXT_PUBLIC_*` values are baked in at build time, so redeploy after changes.
    `SUPABASE_SERVICE_ROLE_KEY` is server-only and optional for now.
 2. **Database & storage:** run the files in `supabase/migrations/` in order
-   (Supabase → SQL Editor, or `npx supabase db push` with the CLI).
+   (Supabase → SQL Editor, or `npx supabase db push` with the CLI), then run
+   `supabase/tests/rls_test.sql` to verify Row Level Security. It runs in a
+   rolled-back transaction and reports `FAIL: ...` if anything leaks.
 3. **Auth URLs:** Supabase → Authentication → URL Configuration:
    - Site URL: your production URL
    - Redirect URLs: `http://localhost:3000/**` and `https://<your-domain>/**`
@@ -44,6 +46,20 @@ Open http://localhost:3000.
   `user-uploads` bucket (`<user id>/<file>` paths, owner-only RLS policies).
 - `src/lib/env.ts` (public values) and `src/lib/server-env.ts` (secrets,
   `server-only`) are the only places that read environment variables.
+
+## Database schema
+
+| Table | Purpose | User access (RLS) |
+| --- | --- | --- |
+| `profiles` | Name, email, avatar | Read own; update name/avatar |
+| `projects` | Content being worked on | Full CRUD on own rows |
+| `generations` | AI text history | Read/delete own; written by server |
+| `generated_images` | AI image history | Read/delete own; written by server |
+| `credits` | Balance, monthly limit, reset date | Read own only |
+| `subscriptions` | Plan and status | Read own only |
+
+Signed-out visitors (`anon`) have no access to any table. New users get a
+profile, credits and a free subscription automatically (signup trigger).
 
 ## Authentication
 
