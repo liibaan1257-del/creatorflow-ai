@@ -84,3 +84,11 @@ supabase/
 See `.env.example`. Only `NEXT_PUBLIC_*` variables reach the browser; every
 secret stays server-side and is read only from modules marked
 `import "server-only"`.
+
+## Deployment (Vercel)
+
+- Pushing to the production branch triggers a deploy automatically.
+- `vercel.json` pins the framework preset to Next.js.
+- After adding or changing environment variables, redeploy:
+  `NEXT_PUBLIC_*` values are inlined at build time.
+- Health check: `GET /api/health` returns `{"status":"ok"}`.
