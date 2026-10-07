@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { siteConfig } from "@/config/site";
+import { AUTH_ROUTES } from "@/lib/auth/redirect";
 
 const features = [
   {
@@ -51,20 +52,20 @@ export default function HomePage() {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              href="#features"
+              href={AUTH_ROUTES.signup}
               className={buttonClasses({ size: "lg", className: "w-full sm:w-auto" })}
             >
-              Explore features
+              Get started free
             </Link>
             <Link
-              href="#audience"
+              href="#features"
               className={buttonClasses({
                 variant: "secondary",
                 size: "lg",
                 className: "w-full sm:w-auto",
               })}
             >
-              Who it&apos;s for
+              Explore features
             </Link>
           </div>
         </Container>
