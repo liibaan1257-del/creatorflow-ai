@@ -6,8 +6,21 @@ export const AUTH_ROUTES = {
   afterLogin: "/dashboard",
 } as const;
 
+/**
+ * Private app areas. Everything under these prefixes requires a signed-in
+ * user; signed-out visitors are redirected to /login?next=<path>.
+ */
+export const APP_ROUTES = [
+  "/dashboard",
+  "/writer",
+  "/images",
+  "/projects",
+  "/templates",
+  "/settings",
+] as const;
+
 /** Route prefixes that require an authenticated user. */
-export const PROTECTED_PREFIXES = ["/dashboard", AUTH_ROUTES.resetPassword];
+export const PROTECTED_PREFIXES: readonly string[] = [...APP_ROUTES, AUTH_ROUTES.resetPassword];
 
 /** Pages a signed-in user has no reason to see. */
 export const GUEST_ONLY_PATHS = [AUTH_ROUTES.login, AUTH_ROUTES.signup];

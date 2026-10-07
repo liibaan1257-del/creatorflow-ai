@@ -99,6 +99,20 @@ export async function signup(
     if (isRateLimited(error.code)) {
       return { error: "Too many attempts. Please try again later.", values };
     }
+    if (error.code === "email_address_invalid") {
+      return { fieldErrors: { email: "Enter a valid email address." }, values };
+    }
+    if (error.code === "email_address_not_authorized") {
+      // Supabase's built-in email service only delivers to project members
+      // until a custom SMTP provider is configured.
+      return {
+        error: "We can't send a confirmation email to this address yet. Please try again later.",
+        values,
+      };
+    }
+    if (error.code === "signup_disabled") {
+      return { error: "New sign-ups are currently disabled.", values };
+    }
     return { error: "Could not create your account. Please try again.", values };
   }
 
