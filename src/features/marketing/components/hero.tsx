@@ -25,7 +25,7 @@ export function Hero() {
           Create Better Content. <span className="text-primary">Faster.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-pretty text-muted-foreground sm:text-xl">
-          AI-powered tools for bloggers, creators, freelancers, and small businesses.
+          AI-powered tools for bloggers, creators, freelancers and small businesses.
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link

@@ -7,7 +7,7 @@ export const siteConfig = {
   shortName: "CreatorFlow",
   tagline: "Create Better Content. Faster.",
   description:
-    "AI-powered tools for bloggers, creators, freelancers, and small businesses. Write, design and organise your content in one secure workspace.",
+    "AI-powered tools for bloggers, creators, freelancers and small businesses. Write, design and organise your content in one secure workspace.",
   keywords: [
     "AI content creation",
     "AI writer",

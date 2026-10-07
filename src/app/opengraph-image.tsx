@@ -45,7 +45,7 @@ export default function OpengraphImage() {
           Create Better Content.&nbsp;<span style={{ color: "#818cf8" }}>Faster.</span>
         </div>
         <div style={{ marginTop: 28, fontSize: 32, color: "#949db0", maxWidth: 900 }}>
-          AI-powered tools for bloggers, creators, freelancers, and small businesses.
+          AI-powered tools for bloggers, creators, freelancers and small businesses.
         </div>
       </div>
     ),
