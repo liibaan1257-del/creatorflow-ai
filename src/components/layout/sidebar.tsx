@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import { Logo } from "@/components/layout/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,14 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = usePathname();
+type NavLinksProps = { pathname: string | null; onNavigate?: () => void };
+
+function NavLinks({ pathname, onNavigate }: NavLinksProps) {
   return (
     <nav aria-label="App">
       <ul className="space-y-0.5">
         {appNav.map(({ href, label, icon: Icon, comingSoon }) => {
-          const active = isActive(pathname, href);
+          const active = pathname !== null && isActive(pathname, href);
           return (
             <li key={href}>
               <Link
@@ -45,6 +46,23 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </ul>
     </nav>
+  );
+}
+
+function ActiveNavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  return <NavLinks pathname={usePathname()} onNavigate={onNavigate} />;
+}
+
+/**
+ * App navigation with the current section highlighted. On dynamic routes the
+ * URL is request data, so the highlight streams in: the static shell renders
+ * the same links without it.
+ */
+export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <Suspense fallback={<NavLinks pathname={null} onNavigate={onNavigate} />}>
+      <ActiveNavLinks onNavigate={onNavigate} />
+    </Suspense>
   );
 }
 

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getWriterType } from "@/features/writer/config";
-import type { ContentType } from "@/types/database";
+import type { ContentType, ProjectStatus } from "@/types/database";
 
 export type SaveProjectResult =
   | { ok: true; projectId: string }
@@ -62,4 +62,66 @@ export async function saveProject(input: {
   revalidatePath("/projects");
   revalidatePath("/dashboard");
   return { ok: true, projectId: data.id };
+}
+
+const STATUSES: readonly ProjectStatus[] = ["draft", "in_progress", "completed", "archived"];
+
+export type ProjectMutationResult = { ok: true } | { ok: false; error: string };
+
+/** Updates the title, content and status of one of the user's projects. */
+export async function updateProject(input: {
+  id: string;
+  title: string;
+  content: string;
+  status: string;
+}): Promise<ProjectMutationResult> {
+  const user = await requireUser();
+  const id = typeof input.id === "string" && UUID.test(input.id) ? input.id : null;
+  const title = typeof input.title === "string" ? input.title.trim() : "";
+  const content = typeof input.content === "string" ? input.content : "";
+  const status = STATUSES.find((s) => s === input.status);
+
+  if (!id) return { ok: false, error: "Unknown project." };
+  if (!title) return { ok: false, error: "Give your project a title." };
+  if (title.length > TITLE_MAX) return { ok: false, error: `Keep the title under ${TITLE_MAX} characters.` };
+  if (content.length > CONTENT_MAX) return { ok: false, error: "This content is too long to save." };
+  if (!status) return { ok: false, error: "Choose a valid status." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .update({ title, content, status })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { ok: false, error: "Could not save your changes. Please try again." };
+
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${id}`);
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+/**
+ * Deletes one of the user's projects. Linked images stay in the user's image
+ * history (the link is cleared by the database).
+ */
+export async function deleteProject(id: string): Promise<ProjectMutationResult> {
+  const user = await requireUser();
+  if (typeof id !== "string" || !UUID.test(id)) return { ok: false, error: "Unknown project." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { ok: false, error: "Could not delete the project. Please try again." };
+
+  revalidatePath("/projects");
+  revalidatePath("/dashboard");
+  return { ok: true };
 }
