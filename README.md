@@ -61,6 +61,21 @@ Open http://localhost:3000.
 Signed-out visitors (`anon`) have no access to any table. New users get a
 profile, credits and a free subscription automatically (signup trigger).
 
+## AI Writer
+
+- UI: `/writer` (`src/features/writer`). Endpoint: `POST /api/ai/generate`.
+- Provider abstraction in `src/lib/ai/` (`AIProvider` interface). The default
+  provider is Anthropic (Claude, `claude-opus-5-5`) via the official SDK; set
+  `ANTHROPIC_API_KEY` (server-only) and optionally `AI_MODEL`. To add another
+  provider, implement `AIProvider` in `src/lib/ai/providers/` and register it
+  in `src/lib/ai/index.ts`.
+- Credits: the endpoint verifies the Supabase session, checks the balance,
+  generates, then calls `public.record_generation()`, which prices the
+  generation server-side (`public.generation_cost()`), deducts credits
+  atomically under a row lock and records the generation. Failed or refused
+  generations are not charged. Users cannot write credits or generations
+  directly.
+
 ## Authentication
 
 - Email + password via Supabase Auth, with email confirmation and password reset.

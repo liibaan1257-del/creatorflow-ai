@@ -12,6 +12,19 @@ function read(name: string): string | undefined {
 }
 
 export const serverEnv = {
+  /** Which AI provider implementation to use (see src/lib/ai). */
+  get aiProvider(): string {
+    return read("AI_PROVIDER") ?? "anthropic";
+  },
+  /** Model id for the selected provider; each provider has its own default. */
+  get aiModel(): string | undefined {
+    return read("AI_MODEL");
+  },
+  /** Anthropic API key (console.anthropic.com → API Keys). */
+  get anthropicApiKey(): string | undefined {
+    return read("ANTHROPIC_API_KEY");
+  },
+
   /**
    * Bypasses Row Level Security. Only for trusted server-side jobs (webhooks,
    * admin tasks, background processing), never for regular user requests.

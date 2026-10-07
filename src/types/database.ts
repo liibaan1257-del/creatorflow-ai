@@ -14,9 +14,17 @@ export type Json =
   | Json[];
 
 /** Values allowed by the CHECK constraints in the schema. */
-export type ProjectType = "blog_post" | "video_script" | "social_caption" | "image" | "other";
+export type ContentType =
+  | "blog_post"
+  | "blog_outline"
+  | "social_post"
+  | "youtube_title"
+  | "youtube_description"
+  | "seo_title"
+  | "meta_description";
+export type ProjectType = ContentType | "video_script" | "social_caption" | "image" | "other";
 export type ProjectStatus = "draft" | "in_progress" | "completed" | "archived";
-export type GenerationType = "blog_post" | "video_script" | "social_caption" | "other";
+export type GenerationType = ContentType | "video_script" | "social_caption" | "other";
 export type SubscriptionPlan = "free" | "pro" | "business";
 export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled" | "expired";
 
@@ -202,7 +210,16 @@ export type Database = {
       };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      generation_cost: {
+        Args: { p_type: string };
+        Returns: number | null;
+      };
+      record_generation: {
+        Args: { p_type: string; p_prompt: string; p_output: string; p_project_id?: string };
+        Returns: { generation_id: string; credits_used: number; balance: number }[];
+      };
+    };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };
