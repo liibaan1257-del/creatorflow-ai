@@ -52,6 +52,18 @@ const FORMAT_GUIDE: Record<WriterType, string> = {
 - A "Chapters" section with plausible placeholder timestamps (00:00 Intro, ...), clearly meant to be adjusted.
 - A short call to subscribe or comment.
 - 3–5 relevant hashtags at the end.`,
+  youtube_script: `Write a complete YouTube video script (roughly 6–10 minutes when spoken) in Markdown:
+- A strong hook for the first 15 seconds as a level-2 heading "Hook".
+- An intro that says what viewers will get and why to stay.
+- 3–6 main sections as level-2 headings, written as natural spoken lines.
+- Brief on-screen or b-roll suggestions in [square brackets] where they help.
+- An outro with a clear call to action (subscribe, comment, or next video).`,
+  product_description: `Write a product description for an online store:
+- A one-sentence headline that states the main benefit.
+- A short paragraph (2–4 sentences) on who it's for and why it's worth it.
+- 4–6 benefit-led bullet points (features translated into outcomes).
+- A closing line that encourages purchase.
+Only describe features mentioned in the brief; never invent specifications, prices or certifications.`,
   seo_title: `Write 5 SEO page title options as a numbered list:
 - Each 50–60 characters, with the main keyword near the start.
 - Clear and click-worthy; no keyword stuffing, no ALL CAPS.

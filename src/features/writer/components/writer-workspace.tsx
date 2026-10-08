@@ -47,23 +47,44 @@ function countWords(text: string) {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
+/** Template preset passed from the server (resolved from ?template=…). */
+export type WriterTemplatePreset = {
+  id: string;
+  name: string;
+  type: WriterType;
+  tone: WriterInput["tone"];
+  instructions: string;
+  topicExample: string;
+};
+
 export function WriterWorkspace({
   initialBalance,
   aiReady,
+  template,
 }: {
   initialBalance: number;
   aiReady: boolean;
+  template?: WriterTemplatePreset;
 }) {
   const router = useRouter();
   const { toast } = useToast();
 
   // Form
-  const [type, setType] = useState<WriterType>("blog_post");
+  const [activeTemplate, setActiveTemplate] = useState(template);
+  const [type, setType] = useState<WriterType>(template?.type ?? "blog_post");
   const [topic, setTopic] = useState("");
-  const [tone, setTone] = useState<WriterInput["tone"]>("professional");
+  const [tone, setTone] = useState<WriterInput["tone"]>(template?.tone ?? "professional");
   const [language, setLanguage] = useState<WriterInput["language"]>("English");
   const [keywords, setKeywords] = useState("");
-  const [instructions, setInstructions] = useState("");
+  const [instructions, setInstructions] = useState(template?.instructions ?? "");
+
+  function clearTemplate() {
+    setActiveTemplate(undefined);
+    setType("blog_post");
+    setTone("professional");
+    setInstructions("");
+    router.replace("/writer");
+  }
 
   // Result
   const [status, setStatus] = useState<Status>("idle");
@@ -182,6 +203,28 @@ export function WriterWorkspace({
       {/* ------------------------------------------------------------ Brief */}
       <Card className="p-5 sm:p-6">
         <form onSubmit={onSubmit} className="space-y-5" noValidate>
+          {activeTemplate ? (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary-soft px-3 py-2.5 text-sm">
+              <p className="min-w-0">
+                <span className="text-muted-foreground">Template: </span>
+                <span className="font-medium">{activeTemplate.name}</span>
+              </p>
+              <button
+                type="button"
+                onClick={clearTemplate}
+                className="shrink-0 cursor-pointer text-sm font-medium text-primary hover:underline"
+              >
+                Clear
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Need a starting point?{" "}
+              <Link href="/templates" className="font-medium text-primary hover:underline">
+                Browse templates
+              </Link>
+            </p>
+          )}
           <fieldset>
             <legend className="mb-2 text-sm font-medium">Content type</legend>
             <div className="grid grid-cols-2 gap-2">
@@ -221,7 +264,7 @@ export function WriterWorkspace({
             required
             rows={3}
             maxLength={WRITER_LIMITS.topicMax}
-            placeholder="e.g. 7 morning habits that help freelancers stay productive"
+            placeholder={`e.g. ${activeTemplate?.topicExample ?? "7 morning habits that help freelancers stay productive"}`}
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             error={fieldErrors?.topic}

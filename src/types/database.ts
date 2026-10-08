@@ -20,8 +20,10 @@ export type ContentType =
   | "social_post"
   | "youtube_title"
   | "youtube_description"
+  | "youtube_script"
   | "seo_title"
-  | "meta_description";
+  | "meta_description"
+  | "product_description";
 export type ProjectType = ContentType | "video_script" | "social_caption" | "image" | "other";
 export type ProjectStatus = "draft" | "in_progress" | "completed" | "archived";
 export type GenerationType = ContentType | "image" | "video_script" | "social_caption" | "other";

@@ -41,6 +41,13 @@ export const WRITER_TYPES = [
     maxOutputTokens: 6000,
   },
   {
+    id: "youtube_script",
+    label: "YouTube Script",
+    description: "Hook, sections and call to action",
+    credits: 4,
+    maxOutputTokens: 12000,
+  },
+  {
     id: "seo_title",
     label: "SEO Title",
     description: "Five search-optimised page titles",
@@ -51,6 +58,13 @@ export const WRITER_TYPES = [
     id: "meta_description",
     label: "Meta Description",
     description: "Three meta descriptions under 160 characters",
+    credits: 1,
+    maxOutputTokens: 4000,
+  },
+  {
+    id: "product_description",
+    label: "Product Description",
+    description: "Benefit-led copy for a product page",
     credits: 1,
     maxOutputTokens: 4000,
   },

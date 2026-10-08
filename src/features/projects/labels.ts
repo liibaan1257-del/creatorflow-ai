@@ -8,6 +8,8 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   social_post: "Social post",
   youtube_title: "YouTube title",
   youtube_description: "YouTube description",
+  youtube_script: "YouTube script",
+  product_description: "Product description",
   seo_title: "SEO title",
   meta_description: "Meta description",
   video_script: "Video script",

@@ -34,6 +34,6 @@ export const appNav: readonly AppNavItem[] = [
   { label: "AI Writer", href: "/writer", icon: PenIcon },
   { label: "AI Images", href: "/images", icon: ImageIcon },
   { label: "My Projects", href: "/projects", icon: FolderIcon },
-  { label: "Templates", href: "/templates", icon: TemplateIcon, comingSoon: true },
+  { label: "Templates", href: "/templates", icon: TemplateIcon },
   { label: "Settings", href: "/settings", icon: SettingsIcon },
 ];

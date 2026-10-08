@@ -3,13 +3,14 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/app-shell";
 import { Alert } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { WriterWorkspace } from "@/features/writer/components/writer-workspace";
+import { getTemplate } from "@/features/templates/data";
+import { WriterWorkspace, type WriterTemplatePreset } from "@/features/writer/components/writer-workspace";
 import { getCurrentCredits } from "@/lib/auth/dal";
 import { serverEnv } from "@/lib/server-env";
 
 export const metadata: Metadata = { title: "AI Writer" };
 
-export default function WriterPage() {
+export default function WriterPage({ searchParams }: PageProps<"/writer">) {
   return (
     <>
       <PageHeader
@@ -17,14 +18,26 @@ export default function WriterPage() {
         description="Blog posts, outlines, social posts, YouTube and SEO copy in your tone and language."
       />
       <Suspense fallback={<WriterSkeleton />}>
-        <Writer />
+        <Writer searchParams={searchParams} />
       </Suspense>
     </>
   );
 }
 
-async function Writer() {
-  const credits = await getCurrentCredits();
+async function Writer({ searchParams }: Pick<PageProps<"/writer">, "searchParams">) {
+  const [credits, params] = await Promise.all([getCurrentCredits(), searchParams]);
+  // Only an id travels in the URL; the preset itself comes from server-side data.
+  const found = getTemplate(typeof params.template === "string" ? params.template : null);
+  const template: WriterTemplatePreset | undefined = found
+    ? {
+        id: found.id,
+        name: found.name,
+        type: found.writerType,
+        tone: found.tone,
+        instructions: found.instructions,
+        topicExample: found.topicExample,
+      }
+    : undefined;
   // Only a boolean leaves the server; the key itself never does.
   const aiReady = serverEnv.aiProvider !== "anthropic" || Boolean(serverEnv.anthropicApiKey);
 
@@ -35,7 +48,13 @@ async function Writer() {
           Add an AI provider API key on the server to enable generation.
         </Alert>
       ) : null}
-      <WriterWorkspace initialBalance={credits?.balance ?? 0} aiReady={aiReady} />
+      {/* key: a different template remounts the form with its preset. */}
+      <WriterWorkspace
+        key={template?.id ?? "blank"}
+        initialBalance={credits?.balance ?? 0}
+        aiReady={aiReady}
+        template={template}
+      />
     </div>
   );
 }

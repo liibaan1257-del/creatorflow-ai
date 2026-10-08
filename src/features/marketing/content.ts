@@ -36,7 +36,7 @@ export const features: readonly Feature[] = [
     description:
       "Turn a topic or rough outline into blog posts, video scripts and social captions in your own tone of voice.",
     icon: PenIcon,
-    status: "coming-soon",
+    status: "available",
   },
   {
     title: "AI Image Generator",
@@ -50,21 +50,21 @@ export const features: readonly Feature[] = [
     description:
       "Keep every draft, image and idea in one organised place, ready to edit, reuse and publish.",
     icon: FolderIcon,
-    status: "coming-soon",
+    status: "available",
   },
   {
     title: "Templates",
     description:
       "Start from proven structures for listicles, how-to guides, product descriptions and more.",
     icon: TemplateIcon,
-    status: "coming-soon",
+    status: "available",
   },
   {
     title: "Credit System",
     description:
       "Simple, transparent usage: each generation uses credits, so you always know what you're spending.",
     icon: CoinsIcon,
-    status: "coming-soon",
+    status: "available",
   },
   {
     title: "Secure Account",
@@ -144,7 +144,7 @@ export const plans: readonly Plan[] = [
     highlights: [
       "Secure personal account",
       "Private content workspace",
-      "Starter credits when AI tools launch",
+      "20 free credits to get started",
     ],
     featured: true,
   },
@@ -171,12 +171,12 @@ export const faqs = [
   {
     question: "What can I do with CreatorFlow AI right now?",
     answer:
-      "CreatorFlow AI is in early access. You can create your secure account and workspace now. The AI Writer, Image Generator and templates are in active development and will appear in your workspace as they launch.",
+      "You can write blog posts, outlines, YouTube scripts, titles and descriptions, social posts, SEO copy and product descriptions with the AI Writer, start from ready-made templates, and keep everything in your project workspace. The AI Image Generator is coming soon.",
   },
   {
     question: "How do credits work?",
     answer:
-      "Each AI generation will use a number of credits depending on its size, such as a short caption versus a long article. Your balance will always be visible, so there are no surprise charges.",
+      "Each AI generation uses credits depending on its size: 1 credit for a title or caption, up to 5 for a full blog post. Your balance is always visible, and failed generations are never charged.",
   },
   {
     question: "Who owns the content I create?",

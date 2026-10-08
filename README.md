@@ -89,6 +89,14 @@ profile, credits and a free subscription automatically (signup trigger).
   generation and image atomically (file removed and nothing charged on
   failure). The browser only receives short-lived signed URLs.
 
+## Templates
+
+- `/templates`: searchable, category-filtered library. Templates are static
+  data in `src/features/templates/data.ts` (same for every user, versioned
+  with the code), so there is no database table.
+- "Use Template" opens `/writer?template=<id>`; the writer resolves the id on
+  the server and preselects content type, tone and instructions (editable).
+
 ## My Projects
 
 - `/projects`: search by title, filter by type and status, sort by recently

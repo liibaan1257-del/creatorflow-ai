@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/layout/coming-soon";
-import { TemplateIcon } from "@/components/ui/icons";
+import { PageHeader } from "@/components/layout/app-shell";
+import { TemplateLibrary } from "@/features/templates/components/template-library";
 
 export const metadata: Metadata = { title: "Templates" };
 
+/** Static library: renders instantly (no user data needed). */
 export default function TemplatesPage() {
   return (
-    <ComingSoon
-      title="Templates"
-      description="Proven structures to start from."
-      icon={<TemplateIcon />}
-      details="Templates for listicles, how-to guides, product descriptions and more are in development."
-    />
+    <>
+      <PageHeader
+        title="Templates"
+        description="Proven starting points for blogs, YouTube, social media, SEO and e-commerce. Pick one to open it in the AI Writer."
+      />
+      <TemplateLibrary />
+    </>
   );
 }
