@@ -177,7 +177,7 @@ end $$;
 reset role;
 
 -- An expired Pro plan resets to the Free allowance.
-select public.apply_plan_change('dddddddd-0000-4000-8000-00000000000d', 'pro', 'active', now() + interval '1 hour');
+do $$ begin perform public.apply_plan_change('dddddddd-0000-4000-8000-00000000000d', 'pro', 'active', now() + interval '1 hour'); end $$;
 update public.subscriptions set started_at = now() - interval '1 month', expires_at = now() - interval '1 minute' where user_id = 'dddddddd-0000-4000-8000-00000000000d';
 update public.credits set reset_date = now() - interval '1 minute' where user_id = 'dddddddd-0000-4000-8000-00000000000d';
 do $$
