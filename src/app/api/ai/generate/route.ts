@@ -38,7 +38,18 @@ export async function POST(request: Request) {
     return json({ error: { code: "validation", message: "Please check the form.", fieldErrors: parsed.fieldErrors } }, 400);
   }
 
-  const result = await generateForUser(user.id, parsed.data, request.signal);
+  // Optional: link the generation to one of the user's projects (Regenerate in
+  // the project editor). Ownership is enforced by the database foreign key.
+  const rawProjectId = (body as { projectId?: unknown }).projectId;
+  const projectId =
+    typeof rawProjectId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawProjectId)
+      ? rawProjectId
+      : undefined;
+  if (rawProjectId !== undefined && !projectId) {
+    return json({ error: { code: "validation", message: "Unknown project." } }, 400);
+  }
+
+  const result = await generateForUser(user.id, parsed.data, request.signal, projectId);
   if (!result.ok) {
     const { status, ...error } = result;
     return json({ error }, status);

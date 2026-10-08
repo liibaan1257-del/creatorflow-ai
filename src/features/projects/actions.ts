@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { getWriterType } from "@/features/writer/config";
+import { parseWriterInput } from "@/features/writer/validation";
 import type { ContentType, ProjectStatus } from "@/types/database";
 
 export type SaveProjectResult =
@@ -23,6 +24,8 @@ export async function saveProject(input: {
   title: string;
   type: string;
   content: string;
+  /** The AI Writer brief, so the project can be regenerated later. */
+  brief?: unknown;
 }): Promise<SaveProjectResult> {
   const user = await requireUser();
 
@@ -53,9 +56,13 @@ export async function saveProject(input: {
     return { ok: true, projectId: data.id };
   }
 
+  // Only a brief that passes the same server-side validation is stored.
+  const parsedBrief = input.brief === undefined ? null : parseWriterInput(input.brief);
+  const brief = parsedBrief?.ok && parsedBrief.data.type === type ? parsedBrief.data : null;
+
   const { data, error } = await supabase
     .from("projects")
-    .insert({ title, content, type, status: "draft" })
+    .insert({ title, content, type, status: "draft", brief })
     .select("id")
     .single();
   if (error) return { ok: false, error: "Could not save your project. Please try again." };

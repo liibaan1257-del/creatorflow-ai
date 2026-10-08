@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
-import { CopyIcon, FileTextIcon } from "@/components/ui/icons";
+import { CopyIcon, FileTextIcon, RefreshIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { deleteProject, updateProject } from "@/features/projects/actions";
 import { PROJECT_STATUS } from "@/features/projects/labels";
+import { getWriterType } from "@/features/writer/config";
+import type { WriterInput } from "@/features/writer/validation";
 import type { ProjectStatus } from "@/types/database";
 
 const STATUS_OPTIONS = (Object.keys(PROJECT_STATUS) as ProjectStatus[]).map((value) => ({
@@ -21,7 +23,16 @@ const STATUS_OPTIONS = (Object.keys(PROJECT_STATUS) as ProjectStatus[]).map((val
 
 type EditorProject = { id: string; title: string; content: string; status: ProjectStatus };
 
-export function ProjectEditor({ project, isImage }: { project: EditorProject; isImage: boolean }) {
+export function ProjectEditor({
+  project,
+  isImage,
+  brief,
+}: {
+  project: EditorProject;
+  isImage: boolean;
+  /** AI Writer brief the project was created from; enables Regenerate. */
+  brief: WriterInput | null;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [saved, setSaved] = useState(project);
@@ -31,6 +42,9 @@ export function ProjectEditor({ project, isImage }: { project: EditorProject; is
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, startSaving] = useTransition();
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const regenerateCost = brief ? (getWriterType(brief.type)?.credits ?? null) : null;
   const [deleting, startDeleting] = useTransition();
 
   const dirty = title !== saved.title || content !== saved.content || status !== saved.status;
@@ -63,6 +77,39 @@ export function ProjectEditor({ project, isImage }: { project: EditorProject; is
     });
   }
 
+  async function regenerate() {
+    if (!brief) return;
+    setRegenerating(true);
+    try {
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...brief, projectId: project.id }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body) {
+        if (res.status === 401) {
+          router.push(`/login?next=/projects/${project.id}`);
+          return;
+        }
+        toast({ variant: "error", title: "Couldn't regenerate", description: body?.error?.message ?? "Please try again." });
+        return;
+      }
+      setContent(body.output);
+      toast({
+        variant: "success",
+        title: "Regenerated",
+        description: `Used ${body.creditsUsed} credit${body.creditsUsed === 1 ? "" : "s"} · ${body.balance} left. Review, then save.`,
+      });
+      router.refresh();
+    } catch {
+      toast({ variant: "error", title: "Network error", description: "Check your connection and try again." });
+    } finally {
+      setRegenerating(false);
+      setConfirmRegenerate(false);
+    }
+  }
+
   async function copy() {
     try {
       await navigator.clipboard.writeText(content);
@@ -80,10 +127,18 @@ export function ProjectEditor({ project, isImage }: { project: EditorProject; is
           {dirty ? <Badge variant="warning">Unsaved changes</Badge> : null}
         </div>
         {!isImage ? (
-          <Button variant="outline" size="sm" onClick={copy} disabled={!content}>
-            <CopyIcon />
-            Copy
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {brief && regenerateCost !== null ? (
+              <Button variant="outline" size="sm" onClick={() => setConfirmRegenerate(true)} disabled={regenerating}>
+                <RefreshIcon />
+                Regenerate · {regenerateCost} cr
+              </Button>
+            ) : null}
+            <Button variant="outline" size="sm" onClick={copy} disabled={!content}>
+              <CopyIcon />
+              Copy
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -105,6 +160,8 @@ export function ProjectEditor({ project, isImage }: { project: EditorProject; is
           </label>
           <textarea
             id="project-content"
+            aria-busy={regenerating || undefined}
+            readOnly={regenerating}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={isImage ? 4 : 18}
@@ -135,6 +192,40 @@ export function ProjectEditor({ project, isImage }: { project: EditorProject; is
           </Button>
         </div>
       </div>
+
+      {brief ? (
+        <Dialog
+          open={confirmRegenerate}
+          onClose={() => !regenerating && setConfirmRegenerate(false)}
+          size="sm"
+          title="Regenerate this content?"
+          description={`Uses ${regenerateCost} credit${regenerateCost === 1 ? "" : "s"}. The new version replaces the text in the editor; nothing is saved until you press Save changes.`}
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setConfirmRegenerate(false)} disabled={regenerating}>
+                Cancel
+              </Button>
+              <Button onClick={regenerate} loading={regenerating}>
+                <RefreshIcon />
+                {regenerating ? "Regenerating…" : "Regenerate"}
+              </Button>
+            </>
+          }
+        >
+          <dl className="space-y-1 text-sm">
+            <div className="flex gap-2">
+              <dt className="text-muted-foreground">Topic:</dt>
+              <dd className="line-clamp-2">{brief.topic}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="text-muted-foreground">Tone · Language:</dt>
+              <dd className="capitalize">
+                {brief.tone} · {brief.language}
+              </dd>
+            </div>
+          </dl>
+        </Dialog>
+      ) : null}
 
       <Dialog
         open={confirmDelete}

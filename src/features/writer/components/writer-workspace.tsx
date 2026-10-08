@@ -162,6 +162,7 @@ export function WriterWorkspace({
         title,
         type: lastInput.type,
         content: output,
+        brief: lastInput,
       });
       if (!result.ok) {
         toast({ variant: "error", title: "Not saved", description: result.error });

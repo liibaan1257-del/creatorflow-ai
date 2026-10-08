@@ -36,6 +36,7 @@ export async function generateForUser(
   userId: string,
   input: WriterInput,
   signal?: AbortSignal,
+  projectId?: string,
 ): Promise<GenerateSuccess | GenerateFailure> {
   const type = getWriterType(input.type)!;
   const supabase = await createClient();
@@ -51,6 +52,19 @@ export async function generateForUser(
   }
   if (credits.balance < type.credits) {
     return insufficient(credits.balance, type.credits);
+  }
+
+  if (projectId) {
+    // Check ownership before spending on the AI call (RLS + explicit filter).
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!project) {
+      return { ok: false, status: 404, code: "save_failed", message: "Project not found. You were not charged." };
+    }
   }
 
   const { system, prompt } = buildWriterPrompt(input);
@@ -71,12 +85,17 @@ export async function generateForUser(
       p_type: input.type,
       p_prompt: prompt.slice(0, 20000),
       p_output: result.text,
+      p_project_id: projectId,
     })
     .single();
 
   if (error) {
     if (error.message.includes("insufficient_credits")) {
       return insufficient(credits.balance, type.credits);
+    }
+    if (error.code === "23503") {
+      // Foreign key: the project doesn't exist or isn't this user's.
+      return { ok: false, status: 404, code: "save_failed", message: "Project not found. You were not charged." };
     }
     console.error("[writer] record_generation failed", error);
     return { ok: false, status: 500, code: "save_failed", message: "Could not save the result. You were not charged." };

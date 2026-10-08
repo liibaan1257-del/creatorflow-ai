@@ -54,6 +54,7 @@ async function ProjectDetail({ params }: Pick<PageProps<"/projects/[id]">, "para
 
       <ProjectEditor
         isImage={isImage}
+        brief={project.brief}
         project={{ id: project.id, title: project.title, content: project.content, status: project.status }}
       />
     </div>

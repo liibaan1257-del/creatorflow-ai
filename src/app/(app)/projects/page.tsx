@@ -16,7 +16,7 @@ const PAGE_SIZE = 50;
 export default function ProjectsPage({ searchParams }: PageProps<"/projects">) {
   return (
     <>
-      <PageHeader title="My Projects" description="Everything you've created, most recent first." />
+      <PageHeader title="My Projects" description="Everything you've created with CreatorFlow AI." />
       <Suspense
         fallback={
           <Card aria-busy="true" aria-label="Loading projects">
@@ -34,7 +34,13 @@ async function AllProjects({ searchParams }: Pick<PageProps<"/projects">, "searc
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.slice(0, 100) : "";
   const status = typeof params.status === "string" ? params.status : "";
-  const [projects, total] = await Promise.all([listProjects(PAGE_SIZE, q, status), getProjectCount()]);
+  const type = typeof params.type === "string" ? params.type : "";
+  const sort = typeof params.sort === "string" ? params.sort : "updated";
+  const [projects, total] = await Promise.all([
+    listProjects(PAGE_SIZE, q, status, type, sort),
+    getProjectCount(),
+  ]);
+  const filtered = Boolean(q || status || type);
 
   if (total === 0) {
     return (
@@ -48,15 +54,15 @@ async function AllProjects({ searchParams }: Pick<PageProps<"/projects">, "searc
 
   return (
     <>
-      <ProjectFilters q={q} status={status} />
+      <ProjectFilters q={q} type={type} status={status} sort={sort} />
       {projects.length === 0 ? (
-        <EmptyState icon={<FolderIcon />} title="No matching projects" description="Try a different search or status." />
+        <EmptyState icon={<FolderIcon />} title="No matching projects" description="Try a different search, type or status." />
       ) : (
         <Card>
           <ProjectList projects={projects} />
         </Card>
       )}
-      {!q && !status && total > projects.length ? (
+      {!filtered && total > projects.length ? (
         <p className="mt-4 text-sm text-muted-foreground">
           Showing the {formatNumber(projects.length)} most recent of {formatNumber(total)} projects.
         </p>

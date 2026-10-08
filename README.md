@@ -89,6 +89,17 @@ profile, credits and a free subscription automatically (signup trigger).
   generation and image atomically (file removed and nothing charged on
   failure). The browser only receives short-lived signed URLs.
 
+## My Projects
+
+- `/projects`: search by title, filter by type and status, sort by recently
+  updated / newest / oldest (GET form, shareable URLs).
+- `/projects/[id]`: edit title, content and status; copy; delete; and
+  Regenerate for projects saved from the AI Writer (the validated brief is
+  stored in `projects.brief`; regenerations are charged and linked to the
+  project). Missing or foreign ids show "Project not found" in the app shell.
+- All reads and writes run as the signed-in user (server-derived, never a
+  client-sent `user_id`) and are enforced by RLS.
+
 ## Authentication
 
 - Email + password via Supabase Auth, with email confirmation and password reset.

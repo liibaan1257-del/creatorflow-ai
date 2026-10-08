@@ -68,6 +68,7 @@ export type Database = {
           status: ProjectStatus;
           created_at: string;
           updated_at: string;
+          brief: Json | null;
         };
         Insert: {
           id?: string;
@@ -78,6 +79,7 @@ export type Database = {
           status?: ProjectStatus;
           created_at?: string;
           updated_at?: string;
+          brief?: Json | null;
         };
         Update: {
           id?: string;
@@ -88,6 +90,7 @@ export type Database = {
           status?: ProjectStatus;
           created_at?: string;
           updated_at?: string;
+          brief?: Json | null;
         };
         Relationships: [];
       };
