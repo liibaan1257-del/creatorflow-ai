@@ -1,36 +1,103 @@
 # CreatorFlow AI
 
 AI-powered content creation platform for bloggers, YouTubers, social media
-creators, freelancers, and small businesses.
+creators, freelancers and small businesses: write articles, scripts and social
+posts, generate images, start from templates and keep everything in one
+private workspace, paid for with monthly credits.
 
-**Stack:** Next.js (App Router) · React · TypeScript · Tailwind CSS · Supabase (Postgres, Auth, Storage) · Vercel
+**Live:** https://creatorflow-ai-sable.vercel.app
 
-## Getting started
+## Features
 
-Requires Node.js 22 (pinned in `package.json` `engines` so Vercel builds on the same major).
+- **AI Writer:** blog posts, outlines, social posts, YouTube titles,
+  descriptions and scripts, SEO titles, meta and product descriptions, in 4
+  tones and 12 languages (Anthropic Claude). Edit, copy, regenerate, save.
+- **AI Images:** 5 styles and 3 aspect ratios (OpenAI GPT Image), stored
+  privately, downloadable, savable as projects.
+- **My Projects:** search, filter, sort, edit, regenerate and delete content.
+- **Templates:** 9 ready-made briefs that preset the AI Writer.
+- **Credits:** Free 100 / Pro 1,000 / Business 5,000 per month; writer 5,
+  image 10, regeneration 5. Atomic, race-free, with a ledger and monthly reset.
+- **Accounts:** email sign-up with confirmation, login, password reset,
+  settings (name, photo, email, password, preferences, sessions, deletion).
+- **Production basics:** Row Level Security everywhere, rate limits, security
+  headers, SEO metadata, sitemap, Open Graph image, accessible UI, dark mode.
+
+## Tech stack
+
+| Layer | Choice |
+| --- | --- |
+| Framework | Next.js 16 (App Router, Server Components, Server Actions, Partial Prerendering) |
+| Language / UI | TypeScript, React 19, Tailwind CSS 4 (no UI library) |
+| Backend | Supabase: Postgres (RLS), Auth, Storage |
+| AI | Anthropic SDK (text), OpenAI SDK (images), behind provider interfaces in `src/lib/ai` |
+| Images | `sharp` (server-side cropping and re-encoding) |
+| Hosting | Vercel (Node.js 22) |
+
+## Local setup
+
+Requires Node.js 22 (`.nvmrc`, and `engines` in `package.json` so Vercel uses
+the same major) and a Supabase project (hosted, or local with the Supabase CLI).
 
 ```bash
+git clone https://github.com/liibaan1257-del/creatorflow-ai.git
+cd creatorflow-ai
 npm install
-cp .env.example .env.local   # then fill in the Supabase values
-npm run dev
+cp .env.example .env.local   # fill in the values (see Environment variables)
+npm run dev                  # http://localhost:3000
 ```
 
-Open http://localhost:3000.
+Then set up the database (next section). Without AI keys the app runs and
+shows "not configured" notices on the AI pages.
+
+## Environment variables
+
+| Variable | Where | Required | Notes |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | browser + server | yes | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | browser + server | yes | anon or publishable key (`sb_publishable_…`); `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` also accepted. Safe to expose: data is protected by RLS |
+| `NEXT_PUBLIC_APP_URL` | browser + server | recommended | Canonical URL for metadata and email links; falls back to the Vercel URL |
+| `ANTHROPIC_API_KEY` | server only | for AI Writer | **Secret** |
+| `OPENAI_API_KEY` | server only | for AI Images | **Secret** |
+| `AI_PROVIDER`, `AI_MODEL`, `IMAGE_PROVIDER`, `IMAGE_MODEL` | server only | no | Overrides (defaults: anthropic / claude-opus-5-5, openai / gpt-image-1) |
+| `SUPABASE_SERVICE_ROLE_KEY` | server only | no | **Secret.** Bypasses RLS; reserved for future webhooks. Not needed today |
+
+Never prefix a secret with `NEXT_PUBLIC_` (that ships it to the browser).
+Secrets are read only in `src/lib/server-env.ts` (`server-only`). `.env*`
+files are git-ignored; only `.env.example` (no values) is committed.
 
 ## Supabase setup
 
-1. **Keys:** Supabase → Project Settings → API. Set `NEXT_PUBLIC_SUPABASE_URL`
-   and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
-   in `.env.local` and in Vercel → Settings → Environment Variables.
-   `NEXT_PUBLIC_*` values are baked in at build time, so redeploy after changes.
-   `SUPABASE_SERVICE_ROLE_KEY` is server-only and optional for now.
-2. **Database & storage:** run the files in `supabase/migrations/` in order
-   (Supabase → SQL Editor, or `npx supabase db push` with the CLI), then run
-   `supabase/tests/rls_test.sql` to verify Row Level Security. It runs in a
-   rolled-back transaction and reports `FAIL: ...` if anything leaks.
-3. **Auth URLs:** Supabase → Authentication → URL Configuration:
-   - Site URL: your production URL
-   - Redirect URLs: `http://localhost:3000/**` and `https://<your-domain>/**`
+1. **Keys:** copy the project URL and anon/publishable key into `.env.local`
+   and into Vercel (see Deployment).
+2. **Database:** in Supabase → SQL Editor, run every file in
+   `supabase/migrations/` **in filename order** (or `npx supabase db push`):
+
+   | Migration | Adds |
+   | --- | --- |
+   | `20261007120000_create_profiles.sql` | profiles + signup trigger |
+   | `20261007150000_create_storage_buckets.sql` | private `user-uploads` bucket + policies |
+   | `20261007160000_create_core_schema.sql` | projects, generations, images, credits, subscriptions + RLS |
+   | `20261008090000_ai_writer.sql` | atomic `record_generation()` |
+   | `20261008120000_ai_images.sql` | image metadata + `record_image_generation()` |
+   | `20261008150000_project_brief.sql` | stored briefs for Regenerate |
+   | `20261008180000_more_content_types.sql` | YouTube script, meta and product types |
+   | `20261009090000_credit_system.sql` | plans, ledger, prices, monthly reset |
+   | `20261009120000_account_settings.sql` | preferences, avatars, account deletion |
+   | `20261009150000_hardening.sql` | least-privilege grants, indexes, rate limits |
+
+   All migrations are safe to re-run.
+3. **Verify:** run the files in `supabase/tests/` (`rls_test`, `credits_test`,
+   `account_test`, `hardening_test`). Each runs in a rolled-back transaction
+   and returns "Success. No rows returned", or an error starting with `FAIL:`.
+4. **Auth → URL Configuration:**
+   - Site URL: your production URL (e.g. `https://creatorflow-ai-sable.vercel.app`)
+   - Redirect URLs: `http://localhost:3000/**` and `https://<production-domain>/**`
+5. **Auth → Emails → SMTP (production):** Supabase's built-in email is limited
+   to a few emails per hour. Configure custom SMTP (e.g. Resend with your
+   domain), then raise Auth → Rate Limits → emails per hour.
+6. **Auth → Rate Limits:** sign-ins come from the app's servers, so raise
+   "sign-ups and sign-ins" (e.g. 100 per 5 minutes).
 
 ### Client architecture
 
@@ -196,55 +263,71 @@ a free subscription and the Free allowance automatically (signup trigger).
 - Email links land on `/auth/confirm`, which supports both Supabase's default
   (`?code=`) links and `token_hash` links from custom email templates.
 
-## Scripts
+## Development commands
 
-| Command             | Description                              |
-| ------------------- | ---------------------------------------- |
-| `npm run dev`       | Start the development server             |
-| `npm run build`     | Production build                         |
-| `npm run start`     | Serve the production build               |
-| `npm run lint`      | ESLint                                   |
-| `npm run typecheck` | Generate route types and run `tsc`       |
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run typecheck` | Generate route types and run `tsc` |
+| `npm run lint` | ESLint |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+
+Run `typecheck`, `lint` and `build` before pushing; all three must pass.
 
 ## Project structure
 
 ```
 src/
   app/                    Routes (App Router)
-    (marketing)/          Public pages (route group: no URL segment)
-    (auth)/               Login, sign-up, password reset
-    (app)/                Authenticated area (dashboard)
-    auth/confirm/         Email link handler
+    (marketing)/          Landing page (+ internal /design-system gallery, noindex)
+    (auth)/               Login, sign-up, forgot/reset password
+    (app)/                Signed-in area: dashboard, writer, images, projects,
+                          templates, settings
+    api/ai/               POST /api/ai/generate, POST /api/ai/images
     api/health/           Liveness endpoint
-    layout.tsx            Root layout, metadata, fonts
-    error.tsx, not-found.tsx
-  components/
-    ui/                   Reusable primitives (Button, Container)
-    layout/               Site chrome (headers, footer, logo)
-  features/               Feature modules (actions, components, validation)
-    auth/
-  config/                 Static, non-secret configuration
-  hooks/                  Client-side React hooks
-  lib/                    Utilities and environment access
-    auth/                 Data Access Layer, redirect rules
-    supabase/             Supabase clients (browser, server, proxy)
+    auth/confirm/         Email link handler
+    robots.ts, sitemap.ts, opengraph-image.tsx
+  components/ui/          Design-system primitives (Button, Card, Dialog, …)
+  components/layout/      App shell, navigation, headers, footer
+  features/<name>/        Feature modules: actions, queries, services,
+                          validation and components (auth, writer, images,
+                          projects, templates, settings, marketing)
+  config/                 Site, navigation and credit display constants
+  lib/
+    ai/                   AI provider interfaces + Anthropic/OpenAI providers
+    auth/                 Data Access Layer (current user, credits), redirects
+    credits/              Server-side credit checks
+    storage/              Private file helpers (signed URLs)
+    supabase/             Supabase clients (browser, server, proxy, admin)
+    env.ts, server-env.ts Environment access (public / server-only)
+    rate-limit.ts         Per-user rate limits
   proxy.ts                Session refresh + route protection
-  services/               Server-only integrations (AI, payments)
-  types/                  Shared TypeScript types (incl. database types)
+  types/database.ts       Database types
 supabase/
-  migrations/             SQL migrations (RLS on every table)
+  migrations/             SQL migrations (run in order)
+  tests/                  SQL tests (rolled back)
 ```
-
-## Environment variables
-
-See `.env.example`. Only `NEXT_PUBLIC_*` variables reach the browser; every
-secret stays server-side and is read only from modules marked
-`import "server-only"`.
 
 ## Deployment (Vercel)
 
-- Pushing to the production branch triggers a deploy automatically.
-- `vercel.json` pins the framework preset to Next.js.
-- After adding or changing environment variables, redeploy:
-  `NEXT_PUBLIC_*` values are inlined at build time.
-- Health check: `GET /api/health` returns `{"status":"ok"}`.
+The project is connected to Vercel through GitHub: every push to the
+production branch builds and deploys automatically.
+
+First-time setup for a new Vercel project:
+
+1. Vercel → **Add New → Project** → import `liibaan1257-del/creatorflow-ai`.
+   The framework is detected as Next.js (`vercel.json` pins it).
+2. **Settings → Environment Variables** (Production, and Preview if used):
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+   `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` (mark the API keys **Sensitive**),
+   optionally `NEXT_PUBLIC_APP_URL`. Paste values only, without quotes or
+   backticks.
+3. **Deploy**, then open `https://<your-app>/api/health`: it should return
+   `{"status":"ok", "supabase":"ok"}`.
+4. Add the production URL to Supabase Auth → URL Configuration (Site URL and
+   Redirect URLs with `/**`).
+
+After changing environment variables, **redeploy**: `NEXT_PUBLIC_*` values are
+inlined at build time. Security headers (CSP, HSTS, …) are set in
+`next.config.ts`.
