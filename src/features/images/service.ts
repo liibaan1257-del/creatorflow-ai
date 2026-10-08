@@ -1,9 +1,9 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { AIError, getImageProvider } from "@/lib/ai";
-import { IMAGE_CREDITS } from "@/features/images/config";
 import { buildImagePrompt } from "@/features/images/prompts";
-import type { ImageInput } from "@/features/images/validation";
+import { parseImageInput, type ImageInput } from "@/features/images/validation";
+import { checkCredits, insufficientCredits, isInsufficientCreditsError, type InsufficientCredits } from "@/lib/credits";
 import { deleteUserFile, getUserFileUrl, storeUserBytes } from "@/lib/storage/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,38 +21,57 @@ export type GeneratedImageView = {
 };
 
 export type ImageGenerateSuccess = { ok: true; image: GeneratedImageView; creditsUsed: number; balance: number };
-export type ImageGenerateFailure = {
-  ok: false;
-  status: number;
-  code: "insufficient_credits" | "no_credits_account" | "ai_error" | "storage_failed" | "save_failed";
-  message: string;
-  balance?: number;
-};
+export type ImageGenerateFailure =
+  | InsufficientCredits
+  | {
+      ok: false;
+      status: number;
+      code: "no_credits_account" | "not_found" | "ai_error" | "storage_failed" | "save_failed";
+      message: string;
+    };
+
+/** A new image from the form, or a new take on one of the user's images. */
+export type ImageRequest = { input: ImageInput } | { sourceImageId: string };
 
 /**
  * Generates an image for the signed-in user:
- * 1. pre-check credits, 2. generate (provider key stays on the server),
+ * 1. pre-check credits (database price: new image or regeneration),
+ * 2. generate (provider key stays on the server),
  * 3. store the file in the user's private Storage folder, 4. charge credits and
  * record generation + image atomically. If step 4 fails the file is removed
  * and nothing is charged.
  */
 export async function generateImageForUser(
   userId: string,
-  input: ImageInput,
+  request: ImageRequest,
   signal?: AbortSignal,
 ): Promise<ImageGenerateSuccess | ImageGenerateFailure> {
   const supabase = await createClient();
 
-  const { data: credits, error: creditsError } = await supabase
-    .from("credits")
-    .select("balance")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (creditsError) throw new Error(`Failed to load credits: ${creditsError.message}`);
-  if (!credits) {
-    return { ok: false, status: 403, code: "no_credits_account", message: "Your account has no credit balance set up." };
+  // A regeneration reuses the settings stored with the user's own image (RLS +
+  // explicit owner filter), so the client can't get a cheap "regeneration"
+  // of an arbitrary prompt. The database re-checks ownership when charging.
+  let input: ImageInput;
+  let sourceImageId: string | undefined;
+  if ("sourceImageId" in request) {
+    const { data: source } = await supabase
+      .from("generated_images")
+      .select("id, prompt, style, aspect_ratio")
+      .eq("id", request.sourceImageId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    const parsed = source ? parseImageInput({ prompt: source.prompt, style: source.style, aspectRatio: source.aspect_ratio }) : null;
+    if (!source || !parsed?.ok) {
+      return { ok: false, status: 404, code: "not_found", message: "Image not found. You were not charged." };
+    }
+    input = parsed.data;
+    sourceImageId = source.id;
+  } else {
+    input = request.input;
   }
-  if (credits.balance < IMAGE_CREDITS) return insufficient(credits.balance);
+
+  const check = await checkCredits(supabase, sourceImageId ? "image_regeneration" : "image");
+  if (!check.ok) return check;
 
   let image;
   try {
@@ -86,12 +105,13 @@ export async function generateImageForUser(
       p_width: image.width,
       p_height: image.height,
       p_model: image.model,
+      p_source_image_id: sourceImageId,
     })
     .single();
 
   if (error) {
     await deleteUserFile(stored.path);
-    if (error.message.includes("insufficient_credits")) return insufficient(credits.balance);
+    if (isInsufficientCreditsError(error)) return insufficientCredits(check.credits.balance, check.cost);
     console.error("[images] record_image_generation failed", error);
     return { ok: false, status: 500, code: "save_failed", message: "Could not save the image. You were not charged." };
   }
@@ -144,15 +164,5 @@ export async function toView(row: ImageRow): Promise<GeneratedImageView | null> 
     createdAt: row.created_at,
     url,
     downloadUrl,
-  };
-}
-
-function insufficient(balance: number): ImageGenerateFailure {
-  return {
-    ok: false,
-    status: 402,
-    code: "insufficient_credits",
-    message: `An image needs ${IMAGE_CREDITS} credits, but you have ${balance}.`,
-    balance,
   };
 }

@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { CREDIT_COSTS, PLAN_CREDITS } from "@/config/credits";
 import {
   BriefcaseIcon,
   CoinsIcon,
@@ -143,8 +144,9 @@ export const plans: readonly Plan[] = [
     status: "available",
     highlights: [
       "Secure personal account",
+      `${PLAN_CREDITS.free.toLocaleString("en-US")} credits every month`,
+      "AI Writer and templates",
       "Private content workspace",
-      "20 free credits to get started",
     ],
     featured: true,
   },
@@ -152,13 +154,13 @@ export const plans: readonly Plan[] = [
     name: "Pro",
     description: "For creators who publish every week.",
     status: "coming-soon",
-    highlights: ["More monthly credits", "All templates", "AI images"],
+    highlights: [`${PLAN_CREDITS.pro.toLocaleString("en-US")} credits every month`, "All templates", "AI images"],
   },
   {
     name: "Business",
     description: "For freelancers and teams creating for clients.",
     status: "coming-soon",
-    highlights: ["Highest credit allowance", "Priority generation", "Team features"],
+    highlights: [`${PLAN_CREDITS.business.toLocaleString("en-US")} credits every month`, "Priority generation", "Team features"],
   },
 ];
 
@@ -166,7 +168,7 @@ export const faqs = [
   {
     question: "Is CreatorFlow AI free to use?",
     answer:
-      "Yes. You can create a free account today. Paid plans with more credits will be introduced later, and we'll announce pricing before anything changes for you.",
+      `Yes. The Free plan includes ${PLAN_CREDITS.free} credits every month. Pro and Business plans with more credits will be introduced later, and we'll announce pricing before anything changes for you.`,
   },
   {
     question: "What can I do with CreatorFlow AI right now?",
@@ -176,7 +178,7 @@ export const faqs = [
   {
     question: "How do credits work?",
     answer:
-      "Each AI generation uses credits depending on its size: 1 credit for a title or caption, up to 5 for a full blog post. Your balance is always visible, and failed generations are never charged.",
+      `Every AI Writer generation uses ${CREDIT_COSTS.writer} credits, an AI image uses ${CREDIT_COSTS.image}, and regenerating a result uses ${CREDIT_COSTS.regeneration}. The Free plan includes ${PLAN_CREDITS.free} credits every month, reset on your monthly renewal date. Your balance is always visible, and failed generations are never charged.`,
   },
   {
     question: "Who owns the content I create?",

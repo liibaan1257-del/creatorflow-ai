@@ -10,6 +10,7 @@ import { CopyIcon, FileTextIcon, RefreshIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
+import { CREDIT_COSTS, creditLabel } from "@/config/credits";
 import { deleteProject, updateProject } from "@/features/projects/actions";
 import { PROJECT_STATUS } from "@/features/projects/labels";
 import { getWriterType } from "@/features/writer/config";
@@ -44,7 +45,7 @@ export function ProjectEditor({
   const [saving, startSaving] = useTransition();
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
-  const regenerateCost = brief ? (getWriterType(brief.type)?.credits ?? null) : null;
+  const regenerateCost = brief && getWriterType(brief.type) ? CREDIT_COSTS.regeneration : null;
   const [deleting, startDeleting] = useTransition();
 
   const dirty = title !== saved.title || content !== saved.content || status !== saved.status;
@@ -84,7 +85,7 @@ export function ProjectEditor({
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...brief, projectId: project.id }),
+        body: JSON.stringify({ ...brief, projectId: project.id, regenerate: true }),
       });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body) {
@@ -99,7 +100,7 @@ export function ProjectEditor({
       toast({
         variant: "success",
         title: "Regenerated",
-        description: `Used ${body.creditsUsed} credit${body.creditsUsed === 1 ? "" : "s"} · ${body.balance} left. Review, then save.`,
+        description: `Used ${creditLabel(body.creditsUsed)} · ${body.balance} left. Review, then save.`,
       });
       router.refresh();
     } catch {
@@ -199,7 +200,7 @@ export function ProjectEditor({
           onClose={() => !regenerating && setConfirmRegenerate(false)}
           size="sm"
           title="Regenerate this content?"
-          description={`Uses ${regenerateCost} credit${regenerateCost === 1 ? "" : "s"}. The new version replaces the text in the editor; nothing is saved until you press Save changes.`}
+          description={`Uses ${creditLabel(regenerateCost ?? 0)}. The new version replaces the text in the editor; nothing is saved until you press Save changes.`}
           footer={
             <>
               <Button variant="outline" onClick={() => setConfirmRegenerate(false)} disabled={regenerating}>

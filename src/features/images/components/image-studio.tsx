@@ -11,8 +11,15 @@ import { CoinsIcon, DownloadIcon, FolderIcon, ImageIcon, RefreshIcon, SparklesIc
 import { EmptyState } from "@/components/ui/state-message";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { creditLabel } from "@/config/credits";
 import { saveImageToProjects } from "@/features/images/actions";
-import { ASPECT_RATIOS, IMAGE_CREDITS, IMAGE_PROMPT_LIMITS, IMAGE_STYLES } from "@/features/images/config";
+import {
+  ASPECT_RATIOS,
+  IMAGE_CREDITS,
+  IMAGE_PROMPT_LIMITS,
+  IMAGE_REGENERATION_CREDITS,
+  IMAGE_STYLES,
+} from "@/features/images/config";
 import type { GeneratedImageView } from "@/features/images/service";
 import type { ImageField, ImageInput } from "@/features/images/validation";
 import { cn } from "@/lib/utils";
@@ -54,7 +61,8 @@ export function ImageStudio({
   // While loading a new image, the frame takes the requested shape.
   const frameRatio = loading ? (lastInput?.aspectRatio ?? aspectRatio) : (current?.aspectRatio ?? aspectRatio);
 
-  async function generate(input: ImageInput) {
+  /** A new image, or (with sourceImageId) a new take on an existing one at the regeneration price. */
+  async function generate(input: ImageInput, sourceImageId?: string) {
     setLoading(true);
     setError(null);
     setFieldErrors({});
@@ -63,7 +71,7 @@ export function ImageStudio({
       const res = await fetch("/api/ai/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
+        body: JSON.stringify(sourceImageId ? { sourceImageId } : input),
       });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body) {
@@ -82,8 +90,8 @@ export function ImageStudio({
       setGallery((items) => [image, ...items.filter((i) => i.id !== image.id)].slice(0, 8));
       toast({
         variant: "success",
-        title: "Image created",
-        description: `Used ${body.creditsUsed} credits · ${body.balance} left`,
+        title: sourceImageId ? "Image regenerated" : "Image created",
+        description: `Used ${creditLabel(body.creditsUsed)} · ${body.balance} left`,
       });
       router.refresh();
       const preview = document.getElementById("image-result");
@@ -95,6 +103,19 @@ export function ImageStudio({
     } finally {
       setLoading(false);
     }
+  }
+
+  // The server reuses the stored prompt and settings of the user's own image;
+  // these values only shape the loading frame.
+  function regenerate(image: GeneratedImageView) {
+    void generate(
+      {
+        prompt: image.prompt,
+        style: (image.style ?? style) as ImageInput["style"],
+        aspectRatio: (image.aspectRatio ?? aspectRatio) as ImageInput["aspectRatio"],
+      },
+      image.id,
+    );
   }
 
   function onSubmit(event: FormEvent) {
@@ -237,11 +258,11 @@ export function ImageStudio({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={!lastInput || !canAfford}
-                  onClick={() => lastInput && generate(lastInput)}
+                  disabled={balance < IMAGE_REGENERATION_CREDITS}
+                  onClick={() => regenerate(current)}
                 >
                   <RefreshIcon />
-                  Regenerate · {IMAGE_CREDITS} cr
+                  Regenerate · {IMAGE_REGENERATION_CREDITS} cr
                 </Button>
                 <Button size="sm" onClick={save} loading={saving} disabled={Boolean(current.projectId)}>
                   <FolderIcon />

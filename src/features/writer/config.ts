@@ -4,68 +4,70 @@
  * public.generation_cost() is the source of truth when credits are spent.
  */
 
+import { CREDIT_COSTS } from "@/config/credits";
+
 export const WRITER_TYPES = [
   {
     id: "blog_post",
     label: "Blog Post",
     description: "A complete, structured article",
-    credits: 5,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 16000,
   },
   {
     id: "blog_outline",
     label: "Blog Outline",
     description: "Headings and key points to write from",
-    credits: 2,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 8000,
   },
   {
     id: "social_post",
     label: "Social Media Post",
     description: "A ready-to-publish post with hashtags",
-    credits: 1,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 4000,
   },
   {
     id: "youtube_title",
     label: "YouTube Title",
     description: "Five click-worthy title options",
-    credits: 1,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 4000,
   },
   {
     id: "youtube_description",
     label: "YouTube Description",
     description: "Description with chapters and links section",
-    credits: 2,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 6000,
   },
   {
     id: "youtube_script",
     label: "YouTube Script",
     description: "Hook, sections and call to action",
-    credits: 4,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 12000,
   },
   {
     id: "seo_title",
     label: "SEO Title",
     description: "Five search-optimised page titles",
-    credits: 1,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 4000,
   },
   {
     id: "meta_description",
     label: "Meta Description",
     description: "Three meta descriptions under 160 characters",
-    credits: 1,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 4000,
   },
   {
     id: "product_description",
     label: "Product Description",
     description: "Benefit-led copy for a product page",
-    credits: 1,
+    credits: CREDIT_COSTS.writer,
     maxOutputTokens: 4000,
   },
 ] as const;

@@ -55,11 +55,42 @@ Open http://localhost:3000.
 | `projects` | Content being worked on | Full CRUD on own rows |
 | `generations` | AI text history | Read/delete own; written by server |
 | `generated_images` | AI image history | Read/delete own; written by server |
-| `credits` | Balance, monthly limit, reset date | Read own only |
+| `credits` | Balance, monthly allowance, reset date | Read own only |
+| `credit_transactions` | Credit ledger (every grant, spend and reset) | Read own only |
 | `subscriptions` | Plan and status | Read own only |
+| `plans` | Plan catalogue and monthly allowances | Read by everyone |
 
-Signed-out visitors (`anon`) have no access to any table. New users get a
-profile, credits and a free subscription automatically (signup trigger).
+Signed-out visitors (`anon`) can only read `plans`. New users get a profile,
+a free subscription and the Free allowance automatically (signup trigger).
+
+## Credits
+
+| Plan | Credits / month | | Action | Cost |
+| --- | --- | --- | --- | --- |
+| Free | 100 | | AI Writer | 5 |
+| Pro | 1,000 | | AI Image | 10 |
+| Business | 5,000 | | Regeneration | 5 |
+
+- The database is the source of truth: `public.plans` (allowances) and
+  `public.generation_cost()` (prices). `src/config/credits.ts` is for display.
+- Balances change only inside `security definer` functions, never from the
+  client. Each one locks the user's `credits` row (`SELECT … FOR UPDATE`),
+  re-checks the balance, deducts, records the generation and writes a
+  `credit_transactions` row in one transaction, so simultaneous requests
+  cannot overspend. `CHECK (balance >= 0)` is the final guard.
+- Server helpers: `src/lib/credits` (`checkCredits`, `getCreditCost`,
+  `fetchMyCredits`) give a fast pre-check before calling an AI provider;
+  `getCurrentCredits` / `getCreditHistory` in the DAL feed the UI.
+- Monthly reset: applied lazily under the same row lock the first time the
+  user's credits are read or spent after `reset_date` (balance = allowance of
+  the effective plan; unused credits don't roll over; the reset day stays
+  fixed). Optionally run `select public.reset_due_credits()` on a schedule
+  (pg_cron) with the service role.
+- Payments (later): a webhook running with the service role calls
+  `public.apply_plan_change(user, plan, status, expires_at)`. Upgrades add the
+  allowance difference immediately; downgrades cap the balance. Expired paid
+  plans fall back to Free at the next reset.
+- Tests: `supabase/tests/credits_test.sql` (run in the SQL Editor; rolled back).
 
 ## AI Writer
 
@@ -71,10 +102,10 @@ profile, credits and a free subscription automatically (signup trigger).
   in `src/lib/ai/index.ts`.
 - Credits: the endpoint verifies the Supabase session, checks the balance,
   generates, then calls `public.record_generation()`, which prices the
-  generation server-side (`public.generation_cost()`), deducts credits
-  atomically under a row lock and records the generation. Failed or refused
-  generations are not charged. Users cannot write credits or generations
-  directly.
+  generation server-side (5 credits; `regenerate: true` is charged as a
+  regeneration), deducts credits atomically under a row lock and records the
+  generation. Failed or refused generations are not charged. Users cannot
+  write credits or generations directly.
 
 ## AI Images
 
@@ -83,7 +114,8 @@ profile, credits and a free subscription automatically (signup trigger).
   optional `IMAGE_MODEL`, default `gpt-image-1`), behind the `ImageProvider`
   interface in `src/lib/ai/`. Wide/tall images from fixed-size models are
   centre-cropped to exact 16:9 / 9:16 with `sharp`.
-- Flow: verify session → validate → check credits (4 per image) → generate →
+- Flow: verify session → validate → check credits (10 per image; 5 to
+  regenerate one of your images via `{ sourceImageId }`) → generate →
   store in the private `user-uploads` bucket (`<user id>/images/…`) →
   `public.record_image_generation()` charges credits and records the
   generation and image atomically (file removed and nothing charged on

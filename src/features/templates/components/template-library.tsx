@@ -7,6 +7,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRightIcon, SearchIcon } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/state-message";
+import { creditLabel } from "@/config/credits";
 import { TEMPLATE_CATEGORIES, TEMPLATES, type TemplateCategory } from "@/features/templates/data";
 import { getWriterType } from "@/features/writer/config";
 import { cn } from "@/lib/utils";
@@ -85,7 +86,7 @@ export function TemplateLibrary() {
                   <p className="mt-1 flex-1 text-sm text-muted-foreground">{template.description}</p>
                   <div className="mt-5 flex items-center justify-between gap-3">
                     <span className="text-xs text-muted-foreground tabular-nums">
-                      {writerType ? `${writerType.credits} credit${writerType.credits === 1 ? "" : "s"}` : null}
+                      {writerType ? creditLabel(writerType.credits) : null}
                     </span>
                     <Link
                       href={`/writer?template=${template.id}`}

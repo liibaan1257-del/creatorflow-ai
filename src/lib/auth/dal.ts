@@ -3,7 +3,8 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AUTH_ROUTES } from "@/lib/auth/redirect";
-import type { Credits, Profile, Subscription } from "@/types/database";
+import { fetchMyCredits } from "@/lib/credits";
+import type { CreditSummary, CreditTransaction, Profile, Subscription } from "@/types/database";
 
 /**
  * Data Access Layer: the single place that resolves the current user.
@@ -49,17 +50,28 @@ export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
   return data;
 });
 
-/** The signed-in user's credit balance (null if the row is missing). */
-export const getCurrentCredits = cache(async (): Promise<Credits | null> => {
+/**
+ * The signed-in user's balance, allowance, next reset and effective plan
+ * (null if the row is missing). Applies a due monthly reset first, so the
+ * number shown is always current.
+ */
+export const getCurrentCredits = cache(async (): Promise<CreditSummary | null> => {
+  await requireUser();
+  return fetchMyCredits(await createClient());
+});
+
+/** The signed-in user's most recent credit ledger entries (RLS: own rows only). */
+export const getCreditHistory = cache(async (limit = 20): Promise<CreditTransaction[]> => {
   const user = await requireUser();
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("credits")
+    .from("credit_transactions")
     .select("*")
     .eq("user_id", user.id)
-    .maybeSingle();
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
-  if (error) throw new Error(`Failed to load credits: ${error.message}`);
+  if (error) throw new Error(`Failed to load credit history: ${error.message}`);
   return data;
 });
 

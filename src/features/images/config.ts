@@ -3,7 +3,10 @@
  * DISPLAY ONLY: public.generation_cost('image') is the source of truth.
  */
 
-export const IMAGE_CREDITS = 4;
+import { CREDIT_COSTS } from "@/config/credits";
+
+export const IMAGE_CREDITS = CREDIT_COSTS.image;
+export const IMAGE_REGENERATION_CREDITS = CREDIT_COSTS.regeneration;
 
 export const IMAGE_STYLES = [
   { value: "realistic", label: "Realistic", hint: "Photographic, natural light" },

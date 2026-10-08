@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/state-message";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { CREDIT_COSTS, creditLabel } from "@/config/credits";
 import { saveProject } from "@/features/projects/actions";
 import {
   LANGUAGES,
@@ -115,7 +116,8 @@ export function WriterWorkspace({
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
+        // Regenerations are charged at the regeneration price by the server.
+        body: JSON.stringify(isRegenerate ? { ...input, regenerate: true } : input),
       });
       const body = await res.json().catch(() => null);
 
@@ -145,7 +147,7 @@ export function WriterWorkspace({
       toast({
         variant: "success",
         title: isRegenerate ? "Regenerated" : "Content generated",
-        description: `Used ${body.creditsUsed} credit${body.creditsUsed === 1 ? "" : "s"} · ${body.balance} left`,
+        description: `Used ${creditLabel(body.creditsUsed)} · ${body.balance} left`,
       });
       // Refresh server components (top bar credits, dashboard).
       router.refresh();
@@ -318,7 +320,7 @@ export function WriterWorkspace({
               {loading ? "Generating…" : (
                 <>
                   <SparklesIcon />
-                  Generate · {selected.credits} credit{selected.credits === 1 ? "" : "s"}
+                  Generate · {creditLabel(selected.credits)}
                 </>
               )}
             </Button>
@@ -348,11 +350,11 @@ export function WriterWorkspace({
               <Button
                 variant="outline"
                 size="sm"
-                disabled={loading || !lastInput || balance < outputType.credits}
+                disabled={loading || !lastInput || balance < CREDIT_COSTS.regeneration}
                 onClick={() => lastInput && generate(lastInput, { isRegenerate: true })}
               >
                 <RefreshIcon />
-                Regenerate · {outputType.credits} cr
+                Regenerate · {CREDIT_COSTS.regeneration} cr
               </Button>
             </div>
           ) : null}

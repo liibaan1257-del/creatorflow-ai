@@ -29,6 +29,15 @@ export type ProjectStatus = "draft" | "in_progress" | "completed" | "archived";
 export type GenerationType = ContentType | "image" | "video_script" | "social_caption" | "other";
 export type SubscriptionPlan = "free" | "pro" | "business";
 export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled" | "expired";
+export type CreditReason =
+  | "signup_grant"
+  | "monthly_reset"
+  | "generation"
+  | "regeneration"
+  | "image"
+  | "image_regeneration"
+  | "plan_change"
+  | "adjustment";
 
 export type Database = {
   public: {
@@ -201,6 +210,26 @@ export type Database = {
         };
         Relationships: [];
       };
+      plans: {
+        Row: { id: SubscriptionPlan; name: string; monthly_credits: number; sort_order: number };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      credit_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          balance_after: number;
+          reason: CreditReason;
+          generation_id: string | null;
+          created_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           id: string;
@@ -234,6 +263,16 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      get_my_credits: {
+        Args: Record<string, never>;
+        Returns: {
+          balance: number;
+          monthly_limit: number;
+          reset_date: string;
+          plan: SubscriptionPlan;
+          plan_name: string;
+        }[];
+      };
       generation_cost: {
         Args: { p_type: string };
         Returns: number | null;
@@ -247,11 +286,18 @@ export type Database = {
           p_width: number;
           p_height: number;
           p_model: string;
+          p_source_image_id?: string;
         };
         Returns: { image_id: string; generation_id: string; credits_used: number; balance: number }[];
       };
       record_generation: {
-        Args: { p_type: string; p_prompt: string; p_output: string; p_project_id?: string };
+        Args: {
+          p_type: string;
+          p_prompt: string;
+          p_output: string;
+          p_project_id?: string;
+          p_is_regeneration?: boolean;
+        };
         Returns: { generation_id: string; credits_used: number; balance: number }[];
       };
     };
@@ -269,3 +315,6 @@ export type Generation = Row<"generations">;
 export type GeneratedImage = Row<"generated_images">;
 export type Credits = Row<"credits">;
 export type Subscription = Row<"subscriptions">;
+export type Plan = Row<"plans">;
+export type CreditTransaction = Row<"credit_transactions">;
+export type CreditSummary = Database["public"]["Functions"]["get_my_credits"]["Returns"][number];

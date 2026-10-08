@@ -26,7 +26,6 @@ import { formatDate, formatNumber } from "@/lib/format";
 export const metadata: Metadata = { title: "Dashboard" };
 
 const RECENT_PROJECTS = 5;
-const PLAN_LABELS = { free: "Free", pro: "Pro", business: "Business" } as const;
 
 /** Quick actions reuse the sidebar config so labels, links and icons stay in sync. */
 const QUICK_ACTIONS = [
@@ -151,8 +150,12 @@ async function Stats() {
       <StatCard
         label="Current plan"
         icon={<SparklesIcon />}
-        value={subscription ? PLAN_LABELS[subscription.plan] : "—"}
-        hint={subscription?.expires_at ? `Renews ${formatDate(subscription.expires_at)}` : "Early access"}
+        value={credits?.plan_name ?? "—"}
+        hint={
+          credits?.plan !== "free" && subscription?.expires_at
+            ? `Renews ${formatDate(subscription.expires_at)}`
+            : "Paid plans coming soon"
+        }
       />
     </div>
   );
@@ -166,7 +169,7 @@ async function RecentProjects() {
         className="m-5 sm:m-6"
         icon={<FolderIcon />}
         title="No projects yet"
-        description="When the AI Writer launches, everything you create will show up here."
+        description="Content you create and save with the AI Writer will show up here."
       />
     );
   }

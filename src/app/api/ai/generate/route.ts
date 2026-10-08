@@ -49,7 +49,10 @@ export async function POST(request: Request) {
     return json({ error: { code: "validation", message: "Unknown project." } }, 400);
   }
 
-  const result = await generateForUser(user.id, parsed.data, request.signal, projectId);
+  // Regenerating a previous result is charged at the regeneration price.
+  const regenerate = (body as { regenerate?: unknown }).regenerate === true;
+
+  const result = await generateForUser(user.id, parsed.data, { signal: request.signal, projectId, regenerate });
   if (!result.ok) {
     const { status, ...error } = result;
     return json({ error }, status);
