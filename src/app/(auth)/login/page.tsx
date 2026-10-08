@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Alert } from "@/components/ui/alert";
 import { AuthCardHeader } from "@/features/auth/components/auth-card-header";
 import { LoginForm } from "@/features/auth/components/login-form";
-import { authErrorMessage } from "@/features/auth/messages";
+import { authErrorMessage, authNoticeMessage } from "@/features/auth/messages";
 import { AUTH_ROUTES, safeRedirectPath } from "@/lib/auth/redirect";
 
 export const metadata: Metadata = { title: "Log in" };
@@ -35,11 +35,13 @@ async function LoginFormWithParams({
 }: Pick<PageProps<"/login">, "searchParams">) {
   const params = await searchParams;
   const error = authErrorMessage(params.error);
+  const notice = authNoticeMessage(params.notice);
   const next = typeof params.next === "string" ? safeRedirectPath(params.next) : undefined;
 
   return (
     <div className="space-y-4">
       {error ? <Alert variant="error">{error}</Alert> : null}
+      {notice ? <Alert variant="success">{notice}</Alert> : null}
       <LoginForm next={next} />
     </div>
   );

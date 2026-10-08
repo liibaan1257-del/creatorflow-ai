@@ -4,6 +4,7 @@ import { CoinsIcon } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentCredits, getCurrentProfile, requireUser } from "@/lib/auth/dal";
 import { formatNumber, initials } from "@/lib/format";
+import { resolveAvatarUrl } from "@/lib/storage/server";
 
 /**
  * Credits pill + profile menu for the top bar. Reads the session: render
@@ -18,6 +19,7 @@ export async function UserNav() {
   ]);
   const name = profile?.full_name?.trim() || null;
   const email = profile?.email ?? user.email;
+  const avatarUrl = await resolveAvatarUrl(profile?.avatar_url);
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">
@@ -33,7 +35,7 @@ export async function UserNav() {
         </Link>
       ) : null}
       <ProfileMenu
-        user={{ name, email, avatarUrl: profile?.avatar_url ?? null, initials: initials(name, email) }}
+        user={{ name, email, avatarUrl, initials: initials(name, email) }}
       />
     </div>
   );

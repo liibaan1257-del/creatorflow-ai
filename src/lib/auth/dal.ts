@@ -88,3 +88,16 @@ export const getCurrentSubscription = cache(async (): Promise<Subscription | nul
   if (error) throw new Error(`Failed to load subscription: ${error.message}`);
   return data;
 });
+
+/**
+ * Auth details for the settings page, verified with Supabase Auth (a network
+ * call, so only used where needed). `pendingEmail` is set while an email
+ * change waits for confirmation.
+ */
+export const getAuthAccount = cache(async (): Promise<{ email: string | null; pendingEmail: string | null } | null> => {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return null;
+  return { email: data.user.email ?? null, pendingEmail: data.user.new_email ?? null };
+});

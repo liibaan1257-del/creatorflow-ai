@@ -22,6 +22,8 @@ import {
   WRITER_LIMITS,
   WRITER_TYPES,
   getWriterType,
+  type Language,
+  type Tone,
   type WriterType,
 } from "@/features/writer/config";
 import type { WriterField, WriterInput } from "@/features/writer/validation";
@@ -62,10 +64,13 @@ export function WriterWorkspace({
   initialBalance,
   aiReady,
   template,
+  defaults,
 }: {
   initialBalance: number;
   aiReady: boolean;
   template?: WriterTemplatePreset;
+  /** The user's saved preferences (Settings → Preferences). */
+  defaults?: { tone?: Tone; language?: Language };
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -74,15 +79,16 @@ export function WriterWorkspace({
   const [activeTemplate, setActiveTemplate] = useState(template);
   const [type, setType] = useState<WriterType>(template?.type ?? "blog_post");
   const [topic, setTopic] = useState("");
-  const [tone, setTone] = useState<WriterInput["tone"]>(template?.tone ?? "professional");
-  const [language, setLanguage] = useState<WriterInput["language"]>("English");
+  const defaultTone = defaults?.tone ?? "professional";
+  const [tone, setTone] = useState<WriterInput["tone"]>(template?.tone ?? defaultTone);
+  const [language, setLanguage] = useState<WriterInput["language"]>(defaults?.language ?? "English");
   const [keywords, setKeywords] = useState("");
   const [instructions, setInstructions] = useState(template?.instructions ?? "");
 
   function clearTemplate() {
     setActiveTemplate(undefined);
     setType("blog_post");
-    setTone("professional");
+    setTone(defaultTone);
     setInstructions("");
     router.replace("/writer");
   }

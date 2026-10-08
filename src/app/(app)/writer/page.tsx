@@ -5,7 +5,8 @@ import { Alert } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTemplate } from "@/features/templates/data";
 import { WriterWorkspace, type WriterTemplatePreset } from "@/features/writer/components/writer-workspace";
-import { getCurrentCredits } from "@/lib/auth/dal";
+import { LANGUAGES, TONES, type Language, type Tone } from "@/features/writer/config";
+import { getCurrentCredits, getCurrentProfile } from "@/lib/auth/dal";
 import { serverEnv } from "@/lib/server-env";
 
 export const metadata: Metadata = { title: "AI Writer" };
@@ -25,7 +26,12 @@ export default function WriterPage({ searchParams }: PageProps<"/writer">) {
 }
 
 async function Writer({ searchParams }: Pick<PageProps<"/writer">, "searchParams">) {
-  const [credits, params] = await Promise.all([getCurrentCredits(), searchParams]);
+  const [credits, profile, params] = await Promise.all([getCurrentCredits(), getCurrentProfile(), searchParams]);
+  // Saved preferences, ignored if they no longer match a known option.
+  const defaults = {
+    tone: TONES.find((t) => t.value === profile?.default_tone)?.value as Tone | undefined,
+    language: LANGUAGES.find((l) => l.value === profile?.default_language)?.value as Language | undefined,
+  };
   // Only an id travels in the URL; the preset itself comes from server-side data.
   const found = getTemplate(typeof params.template === "string" ? params.template : null);
   const template: WriterTemplatePreset | undefined = found
@@ -54,6 +60,7 @@ async function Writer({ searchParams }: Pick<PageProps<"/writer">, "searchParams
         initialBalance={credits?.balance ?? 0}
         aiReady={aiReady}
         template={template}
+        defaults={defaults}
       />
     </div>
   );

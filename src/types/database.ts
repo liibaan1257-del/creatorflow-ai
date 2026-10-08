@@ -48,6 +48,8 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           avatar_url: string | null;
+          default_tone: string | null;
+          default_language: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -56,6 +58,8 @@ export type Database = {
           email?: string | null;
           full_name?: string | null;
           avatar_url?: string | null;
+          default_tone?: string | null;
+          default_language?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -64,6 +68,8 @@ export type Database = {
           email?: string | null;
           full_name?: string | null;
           avatar_url?: string | null;
+          default_tone?: string | null;
+          default_language?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -263,6 +269,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      delete_my_account: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
       get_my_credits: {
         Args: Record<string, never>;
         Returns: {

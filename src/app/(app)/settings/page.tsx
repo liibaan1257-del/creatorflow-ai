@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/app-shell";
-import { Avatar } from "@/components/ui/avatar";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/state-message";
 import { CREDIT_COSTS } from "@/config/credits";
-import { getCreditHistory, getCurrentCredits, getCurrentProfile, requireUser } from "@/lib/auth/dal";
+import { authNoticeMessage } from "@/features/auth/messages";
+import { DeleteAccount, PasswordForm, PreferencesForm, SessionActions } from "@/features/settings/components/account-forms";
+import { AvatarField, EmailForm, ProfileForm } from "@/features/settings/components/profile-section";
+import { getAuthAccount, getCreditHistory, getCurrentCredits, getCurrentProfile, requireUser } from "@/lib/auth/dal";
 import { formatDate, formatNumber, initials } from "@/lib/format";
+import { resolveAvatarUrl } from "@/lib/storage/server";
 import { cn } from "@/lib/utils";
 import type { CreditReason } from "@/types/database";
 
@@ -25,80 +29,130 @@ const REASON_LABELS: Record<CreditReason, string> = {
   adjustment: "Allowance update",
 };
 
-export default function SettingsPage() {
+export default function SettingsPage({ searchParams }: PageProps<"/settings">) {
   return (
     <>
-      <PageHeader title="Settings" description="Your account, plan and usage." />
+      <PageHeader title="Settings" description="Your profile, preferences, plan and account." />
       <Suspense fallback={<SettingsSkeleton />}>
-        <SettingsContent />
+        <SettingsContent searchParams={searchParams} />
       </Suspense>
     </>
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, stacked, children }: { label: string; stacked?: boolean; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className={cn("flex flex-col gap-1 py-3", !stacked && "sm:flex-row sm:items-center sm:justify-between")}>
       <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="text-sm font-medium break-all sm:text-right">{children}</dd>
+      <dd className={cn("text-sm font-medium break-words", !stacked && "sm:text-right")}>{children}</dd>
     </div>
   );
 }
 
-async function SettingsContent() {
-  const [user, profile, credits, history] = await Promise.all([
+async function SettingsContent({ searchParams }: Pick<PageProps<"/settings">, "searchParams">) {
+  const [user, profile, credits, history, account, params] = await Promise.all([
     requireUser(),
     getCurrentProfile(),
     getCurrentCredits(),
     getCreditHistory(20),
+    getAuthAccount(),
+    searchParams,
   ]);
   const name = profile?.full_name?.trim() || null;
-  const email = profile?.email ?? user.email;
+  const email = account?.email ?? profile?.email ?? user.email;
+  const avatarSrc = await resolveAvatarUrl(profile?.avatar_url);
+  const notice = authNoticeMessage(params.notice);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Editing your profile is coming soon.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-2 flex items-center gap-4">
-            <Avatar fallback={initials(name, email)} src={profile?.avatar_url} size="lg" />
-            <div className="min-w-0">
-              <p className="truncate font-medium">{name ?? "No name set"}</p>
-              <p className="truncate text-sm text-muted-foreground">{email ?? "—"}</p>
-            </div>
-          </div>
-          <dl className="divide-y divide-border">
-            <Row label="Member since">{profile ? formatDate(profile.created_at, "long") : "—"}</Row>
-          </dl>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      {notice ? <Alert variant="success">{notice}</Alert> : null}
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+              <CardDescription>How you appear in CreatorFlow AI.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <AvatarField src={avatarSrc} initials={initials(name, email)} hasAvatar={Boolean(profile?.avatar_url)} />
+              <div className="border-t border-border pt-6">
+                <ProfileForm fullName={name} />
+              </div>
+              <div className="border-t border-border pt-6">
+                <EmailForm email={email} pendingEmail={account?.pendingEmail ?? null} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Preferences</CardTitle>
+              <CardDescription>Defaults for new content.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PreferencesForm tone={profile?.default_tone ?? null} language={profile?.default_language ?? null} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Account</CardTitle>
+              <CardDescription>Password, sessions and account deletion.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <section aria-labelledby="password-heading" className="space-y-4">
+                <h3 id="password-heading" className="text-sm font-semibold">Change password</h3>
+                <PasswordForm />
+              </section>
+              <section aria-labelledby="sessions-heading" className="space-y-3 border-t border-border pt-6">
+                <h3 id="sessions-heading" className="text-sm font-semibold">Sessions</h3>
+                <p className="text-sm text-muted-foreground">
+                  Log out here, or everywhere if you used a shared or lost device.
+                </p>
+                <SessionActions />
+              </section>
+              <section
+                aria-labelledby="danger-heading"
+                className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
+              >
+                <h3 id="danger-heading" className="text-sm font-semibold text-destructive">Delete account</h3>
+                <p className="text-sm text-muted-foreground">
+                  Permanently deletes your account and everything in it: projects, generations, images, files and
+                  credits.
+                </p>
+                <DeleteAccount />
+              </section>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6 lg:sticky lg:top-20">
+          <Card>
+            <CardHeader>
+              <CardTitle>Plan & credits</CardTitle>
+              <CardDescription>Paid plans are coming soon.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <dl className="divide-y divide-border">
+                <Row label="Plan">{credits ? <Badge variant="primary">{credits.plan_name}</Badge> : "—"}</Row>
+                <Row label="Credit balance">{credits ? formatNumber(credits.balance) : "—"}</Row>
+                <Row label="Monthly allowance">{credits ? formatNumber(credits.monthly_limit) : "—"}</Row>
+                <Row label="Next reset">{credits ? formatDate(credits.reset_date, "long") : "—"}</Row>
+                <Row label="Costs" stacked>
+                  AI Writer {CREDIT_COSTS.writer} · AI Image {CREDIT_COSTS.image} · Regeneration {CREDIT_COSTS.regeneration}
+                </Row>
+              </dl>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Your balance is reset to your monthly allowance on the reset date. Unused credits don&apos;t roll over, and
+                failed generations are never charged.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Plan & credits</CardTitle>
-          <CardDescription>Paid plans are coming soon.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="divide-y divide-border">
-            <Row label="Plan">{credits ? <Badge variant="primary">{credits.plan_name}</Badge> : "—"}</Row>
-            <Row label="Credit balance">{credits ? formatNumber(credits.balance) : "—"}</Row>
-            <Row label="Monthly allowance">{credits ? formatNumber(credits.monthly_limit) : "—"}</Row>
-            <Row label="Next reset">{credits ? formatDate(credits.reset_date, "long") : "—"}</Row>
-            <Row label="Costs">
-              AI Writer {CREDIT_COSTS.writer} · AI Image {CREDIT_COSTS.image} · Regeneration {CREDIT_COSTS.regeneration}
-            </Row>
-          </dl>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Your balance is reset to your monthly allowance on the reset date. Unused credits don&apos;t roll over, and
-            failed generations are never charged.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Credit history</CardTitle>
           <CardDescription>Your most recent credit activity.</CardDescription>
@@ -138,10 +192,16 @@ async function SettingsContent() {
 
 function SettingsSkeleton() {
   return (
-    <div className="grid gap-6 lg:grid-cols-2" aria-busy="true" aria-label="Loading settings">
-      <Skeleton className="h-64 rounded-xl" />
-      <Skeleton className="h-64 rounded-xl" />
-      <Skeleton className="h-48 rounded-xl lg:col-span-2" />
+    <div
+      className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]"
+      aria-busy="true"
+      aria-label="Loading settings"
+    >
+      <div className="space-y-6">
+        <Skeleton className="h-96 rounded-xl" />
+        <Skeleton className="h-56 rounded-xl" />
+      </div>
+      <Skeleton className="h-80 rounded-xl" />
     </div>
   );
 }

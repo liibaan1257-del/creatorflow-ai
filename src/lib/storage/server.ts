@@ -105,3 +105,50 @@ export async function deleteUserFile(path: string): Promise<boolean> {
   const { error } = await supabase.storage.from(bucket).remove([path]);
   return !error;
 }
+
+/**
+ * Display URL for profiles.avatar_url: an https URL is used as is; a file in
+ * the user's own folder gets a short-lived signed URL.
+ */
+export async function resolveAvatarUrl(avatarUrl: string | null | undefined): Promise<string | null> {
+  if (!avatarUrl) return null;
+  if (avatarUrl.startsWith("https://")) return avatarUrl;
+  return getUserFileUrl(avatarUrl);
+}
+
+/** Lists every file path in the user's folder (all sub-folders). */
+async function listAllUserFiles(userId: string): Promise<string[] | null> {
+  const supabase = await createClient();
+  const paths: string[] = [];
+  const folders = [userId];
+  const pageSize = 1000;
+
+  while (folders.length) {
+    const folder = folders.pop()!;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await supabase.storage.from(bucket).list(folder, { limit: pageSize, offset });
+      if (error) return null;
+      for (const entry of data) {
+        // Folders have no id in Storage listings.
+        if (entry.id === null) folders.push(`${folder}/${entry.name}`);
+        else paths.push(`${folder}/${entry.name}`);
+      }
+      if (data.length < pageSize) break;
+    }
+  }
+  return paths;
+}
+
+/** Deletes every file the signed-in user has stored. Used before account deletion. */
+export async function deleteAllUserFiles(): Promise<boolean> {
+  const user = await requireUser();
+  const paths = await listAllUserFiles(user.id);
+  if (!paths) return false;
+
+  const supabase = await createClient();
+  for (let i = 0; i < paths.length; i += 100) {
+    const { error } = await supabase.storage.from(bucket).remove(paths.slice(i, i + 100));
+    if (error) return false;
+  }
+  return true;
+}

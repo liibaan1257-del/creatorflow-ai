@@ -140,6 +140,28 @@ a free subscription and the Free allowance automatically (signup trigger).
 - All reads and writes run as the signed-in user (server-derived, never a
   client-sent `user_id`) and are enforced by RLS.
 
+## Settings
+
+- `/settings` (`src/features/settings`): profile (name, photo, email),
+  preferences (default tone and language for the AI Writer), password,
+  sessions (log out / log out of all devices), account deletion, plan,
+  credits and credit history.
+- All changes run as the signed-in user via Server Actions; RLS and column
+  grants limit writes to the user's own profile row (`full_name`,
+  `avatar_url`, `default_tone`, `default_language`).
+- Photo: resized in the browser, then re-encoded on the server with `sharp`
+  (256×256 WebP, metadata such as GPS removed) and stored privately in
+  `<user id>/avatars/`; shown via signed URLs.
+- Email and password changes require the current password. Email changes use
+  Supabase Auth confirmation links (both addresses with "Secure email
+  change"); `profiles.email` follows via a trigger once confirmed. A password
+  change signs out other devices.
+- Account deletion: password + typing `DELETE`. The app removes the user's
+  storage files, then `public.delete_my_account()` deletes the auth user
+  (everything else cascades). The function refuses unless the session signed
+  in within the last 10 minutes. No service-role key is needed.
+- Tests: `supabase/tests/account_test.sql`.
+
 ## Authentication
 
 - Email + password via Supabase Auth, with email confirmation and password reset.

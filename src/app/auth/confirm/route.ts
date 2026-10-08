@@ -18,7 +18,7 @@ function isEmailOtpType(value: string | null): value is EmailOtpType {
 
 /**
  * Landing point for links in Supabase auth emails (sign-up confirmation,
- * password reset). Supports both link formats:
+ * password reset, email change). Supports both link formats:
  * - `?token_hash=...&type=...` (works across devices; needs custom templates)
  * - `?code=...` (PKCE, used by Supabase's default templates)
  * On success the session cookie is set and the user is sent to `next`.
@@ -29,6 +29,12 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const code = searchParams.get("code");
+
+  // With "Secure email change", the first of the two confirmation links only
+  // returns a message (no code); the change completes with the second link.
+  if (!tokenHash && !code && searchParams.has("message") && !searchParams.has("error")) {
+    return NextResponse.redirect(new URL("/settings?notice=email_confirm_other", request.nextUrl.origin));
+  }
 
   const supabase = await createClient();
   let ok = false;
