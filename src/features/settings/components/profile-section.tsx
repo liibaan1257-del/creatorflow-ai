@@ -87,6 +87,7 @@ export function AvatarField({ src, initials, hasAvatar }: { src: string | null; 
             ref={inputRef}
             id="avatar-input"
             type="file"
+            aria-label="Upload profile photo"
             accept="image/jpeg,image/png,image/webp"
             className="sr-only"
             onChange={(event) => onFile(event.target.files?.[0])}

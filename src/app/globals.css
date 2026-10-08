@@ -22,10 +22,10 @@
   --primary-foreground: #ffffff;
   --primary-soft: #eef0ff; /* tinted backgrounds, active nav items */
 
-  --destructive: #dc2626;
+  --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
   --destructive-soft: #fef2f2;
-  --success: #059669;
+  --success: #047857;
   --success-soft: #ecfdf5;
   --warning: #b45309;
   --warning-soft: #fffbeb;

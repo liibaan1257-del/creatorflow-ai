@@ -162,6 +162,29 @@ a free subscription and the Free allowance automatically (signup trigger).
   in within the last 10 minutes. No service-role key is needed.
 - Tests: `supabase/tests/account_test.sql`.
 
+## Security
+
+- **Auth & authorization:** every protected page, Server Action and API route
+  verifies the user on the server (`src/lib/auth/dal.ts`); the proxy redirect
+  is only a UX layer. The user id always comes from the session, never from
+  the request. Row Level Security is enabled on every table, and API roles get
+  only the privileges they need (no `TRUNCATE`, column-level `UPDATE`).
+- **Credits:** only changed inside locked `security definer` functions (see
+  Credits). Prices and limits live in the database.
+- **Rate limits:** `public.hit_rate_limit()` caps AI requests per user (20
+  text / 6 images per minute; limits are fixed in SQL). Supabase Auth limits
+  sign-in, sign-up and email sending.
+- **Input:** all request bodies and forms are validated on the server; AI
+  endpoints accept JSON only (cross-site form posts get 415) and Server Actions
+  check the Origin. Output is rendered as text (no `dangerouslySetInnerHTML`).
+- **Headers** (`next.config.ts`): CSP (no framing, plugins or foreign form
+  targets; network only to this site and Supabase), `X-Frame-Options`,
+  `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS. Partial
+  Prerendering rules out a nonce-based CSP, so inline scripts are allowed.
+- **Secrets:** server-only modules (`server-only`), never `NEXT_PUBLIC_`;
+  `.env*` is git-ignored.
+- Tests: `supabase/tests/hardening_test.sql`.
+
 ## Authentication
 
 - Email + password via Supabase Auth, with email confirmation and password reset.

@@ -1,6 +1,7 @@
 import { generateImageForUser, type ImageRequest } from "@/features/images/service";
 import { parseImageInput } from "@/features/images/validation";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { hitRateLimit, rateLimitedResponse } from "@/lib/rate-limit";
 
 /**
  * POST /api/ai/images: AI image generation. Verifies the Supabase session,
@@ -47,6 +48,9 @@ export async function POST(request: Request) {
     }
     imageRequest = { input: parsed.data };
   }
+
+  const retryAfter = await hitRateLimit("ai_image");
+  if (retryAfter > 0) return rateLimitedResponse(retryAfter);
 
   const result = await generateImageForUser(user.id, imageRequest, request.signal);
   if (!result.ok) {

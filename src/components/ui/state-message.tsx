@@ -9,11 +9,21 @@ type StateMessageProps = {
   /** Buttons or links, e.g. "Create your first post" or "Try again". */
   action?: ReactNode;
   tone?: "neutral" | "error";
+  /** Use "h1" when the message is the page's main content (e.g. a 404). */
+  headingLevel?: "h1" | "h2" | "h3";
   className?: string;
 };
 
 /** Shared layout for empty and error states. */
-function StateMessage({ title, description, icon, action, tone = "neutral", className }: StateMessageProps) {
+function StateMessage({
+  title,
+  description,
+  icon,
+  action,
+  tone = "neutral",
+  headingLevel: Heading = "h3",
+  className,
+}: StateMessageProps) {
   return (
     <div
       role={tone === "error" ? "alert" : undefined}
@@ -30,7 +40,7 @@ function StateMessage({ title, description, icon, action, tone = "neutral", clas
       >
         {icon}
       </div>
-      <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+      <Heading className="text-base font-semibold tracking-tight">{title}</Heading>
       {description ? (
         <p className="mt-1.5 max-w-sm text-sm text-pretty text-muted-foreground">{description}</p>
       ) : null}

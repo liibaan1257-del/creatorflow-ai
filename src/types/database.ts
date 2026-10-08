@@ -269,6 +269,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      hit_rate_limit: {
+        Args: { p_bucket: string };
+        Returns: number;
+      };
       delete_my_account: {
         Args: Record<string, never>;
         Returns: undefined;

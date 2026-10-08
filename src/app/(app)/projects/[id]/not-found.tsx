@@ -8,6 +8,7 @@ export default function ProjectNotFound() {
   return (
     <EmptyState
       icon={<FolderIcon />}
+      headingLevel="h1"
       title="Project not found"
       description="It may have been deleted, or the link is incorrect."
       action={

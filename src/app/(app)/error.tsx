@@ -19,6 +19,7 @@ export default function AppError({
 
   return (
     <ErrorState
+      headingLevel="h1"
       title="We couldn't load this page"
       description="Something went wrong while loading your data. Please try again."
       action={

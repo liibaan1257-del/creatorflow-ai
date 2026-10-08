@@ -1,6 +1,7 @@
 import { generateForUser } from "@/features/writer/service";
 import { parseWriterInput } from "@/features/writer/validation";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { hitRateLimit, rateLimitedResponse } from "@/lib/rate-limit";
 
 /**
  * POST /api/ai/generate — AI Writer endpoint.
@@ -51,6 +52,9 @@ export async function POST(request: Request) {
 
   // Regenerating a previous result is charged at the regeneration price.
   const regenerate = (body as { regenerate?: unknown }).regenerate === true;
+
+  const retryAfter = await hitRateLimit("ai_writer");
+  if (retryAfter > 0) return rateLimitedResponse(retryAfter);
 
   const result = await generateForUser(user.id, parsed.data, { signal: request.signal, projectId, regenerate });
   if (!result.ok) {

@@ -19,9 +19,10 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex flex-1 items-center py-16">
+    <main id="main-content" tabIndex={-1} className="flex flex-1 items-center py-16 outline-none">
       <Container className="max-w-xl">
         <ErrorState
+          headingLevel="h1"
           description="An unexpected error occurred. Please try again."
           action={
             <Button onClick={reset}>

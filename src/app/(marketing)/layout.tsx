@@ -5,7 +5,7 @@ export default function MarketingLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 outline-none">{children}</main>
       <SiteFooter />
     </>
   );

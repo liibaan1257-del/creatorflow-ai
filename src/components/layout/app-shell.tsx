@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Suspense>
           </ErrorBoundary>
         </header>
-        <main className="flex-1">
+        <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
           <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">{children}</div>
         </main>
       </div>
